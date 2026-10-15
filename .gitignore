@@ -1,6 +1,6 @@
 # Data and trained models (large, regenerable)
-data/
-models/
+/data/
+/models/
 *.keras
 *.h5
 

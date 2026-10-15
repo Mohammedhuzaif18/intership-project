@@ -1,0 +1,25 @@
+{
+  "Baseline CNN": {
+    "correct": 549,
+    "n": 583,
+    "accuracy": 0.9417,
+    "ci95": [
+      0.9196,
+      0.958
+    ]
+  },
+  "ResNet50": {
+    "correct": 558,
+    "n": 583,
+    "accuracy": 0.9571,
+    "ci95": [
+      0.9375,
+      0.9708
+    ]
+  },
+  "mcnemar_exact": {
+    "resnet_right_baseline_wrong": 22,
+    "baseline_right_resnet_wrong": 13,
+    "p_value": 0.1755
+  }
+}

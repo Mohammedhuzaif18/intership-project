@@ -1,0 +1,16 @@
+{
+  "features": "log width, log height, aspect ratio (no pixels)",
+  "test_roc_auc": 0.912,
+  "test_accuracy": 0.8233,
+  "test_balanced_accuracy": 0.8391,
+  "median_size": {
+    "NORMAL": [
+      1654,
+      1322
+    ],
+    "PNEUMONIA": [
+      1160,
+      768
+    ]
+  }
+}

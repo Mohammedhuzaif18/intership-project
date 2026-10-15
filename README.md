@@ -1,191 +1,120 @@
 # Interpretable Deep Learning for Respiratory Disorder Detection from Chest X-Rays
 
-> **DISCLAIMER**: This is an educational and research prototype. It is **not** an FDA/CE certified medical diagnostic device and must never be used to make clinical patient decisions.
+> **Educational prototype, not a diagnostic tool.** Not an FDA/CE certified medical device. Never use it for clinical decisions.
 
-End-to-end internship pipeline that meets every listed objective:
+An end-to-end pipeline that classifies chest X-rays as **Normal** or **Pneumonia**, explains each prediction with **Grad-CAM**, and serves both through a **FastAPI** backend and a web frontend. The project is split into Review-I (data, baseline CNN, ResNet50 transfer learning, evaluation) and Review-II (Grad-CAM, app, multi-class extension). Progress is tracked step by step in [PROGRESS.md](PROGRESS.md); the Review write-ups are [REVIEW1_SUMMARY.md](REVIEW1_SUMMARY.md) and [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
 
-1. Collect and preprocess chest X-rays (resize, normalize, augment).
-2. Train a **baseline CNN**.
-3. Train **ResNet50 transfer learning** and compare it with the baseline.
-4. Evaluate with accuracy, precision, recall, F1, confusion matrix, and ROC-AUC, with **class-weight** imbalance handling.
-5. Generate **Grad-CAM** explanations.
-6. Serve a **FastAPI + web UI** that returns predicted class, confidence, and Grad-CAM.
-7. **Optional multi-class** extension: COVID-19 and tuberculosis (TB).
+## Results (held-out test set only)
 
----
+### Review-I: Normal vs Pneumonia (Kermany, patient-level split, test n = 583)
 
-## What the system does
+| Model | Accuracy (95% CI) | Precision | Recall | Specificity | F1 | ROC-AUC |
+|---|---|---|---|---|---|---|
+| Baseline CNN | 94.2% (92.0–95.8) | 0.935 | 0.988 | 0.817 | 0.961 | 0.986 |
+| **ResNet50** (selected on validation F1) | **95.7%** (93.8–97.1) | 0.972 | 0.969 | 0.924 | 0.971 | 0.993 |
 
-Upload a chest radiograph in the web app. The API classifies it (NORMAL / PNEUMONIA, and COVID / TB when those classes were trained) and overlays a Grad-CAM heatmap showing which lung regions most influenced the decision.
+ResNet50 accuracy by subtype: bacterial pneumonia 98.2% (276 images), viral 94.6% (149), normal 92.4% (158). The accuracy difference between the two models is not statistically significant (exact McNemar p = 0.18), but ResNet50 has far fewer false alarms on normal X-rays (12 vs 29). Details: [REVIEW1_SUMMARY.md](REVIEW1_SUMMARY.md).
 
----
+**Leakage and shortcut checks.** No patient and no file hash is shared between splits. Test accuracy is below 99%, so the >99% leakage rule did not trigger. EDA did find a dataset bias: image width, height and aspect ratio alone predict the class with test ROC-AUC 0.912, because pneumonia images are natively smaller and wider. Grad-CAM shows some predictions leaning on image borders.
 
-## Objective 1 — Collect and preprocess
+<!-- RESULTS-II -->
 
-| Step | Script | What it does |
-|------|--------|----------------|
-| Download + split | `python src/prepare_data.py` | Kermany chest X-ray set from Hugging Face (`AiresPucrs/chest-xray`). Stratified **80/10/10** train/val/test **split by patient** (`StratifiedGroupKFold` on the patient ID in each filename), so no patient's X-rays appear in two splits. Asserts zero patient and zero file overlap. Rebuilds `data/processed/` from scratch. |
-| Optional 4-class | `python src/prepare_multiclass.py` | Adds COVID (ieee8023 GitHub CXR set, grouped by its `patientid`) and TB (NLM Montgomery / Open-i, one image per patient). If Kaggle keys exist, also tries COVID-QU-Ex and a TB Kaggle set. You can drop extra files in `data/raw/extra/COVID` and `data/raw/extra/TB` (no patient IDs there, so each image is treated as its own patient). |
-| Resize | `python -m src.preprocess` | Deletes `data/preprocessed_224/`, then writes multi-threaded **224×224 RGB** JPEGs there, so no files from an earlier split survive. |
-| Normalize | Inside each model | Baseline: `Rescaling(1/255)`. ResNet50: `resnet50.preprocess_input`. MobileNetV2 (optional): `mobilenet_v2.preprocess_input`. |
-| Augment (train only) | `src/dataset.py` | Rotation ±15°, shift ±10%, zoom ±10%, horizontal flip. |
+## Datasets
 
-If COVID/TB downloads fail, training still runs on the classes that exist (typically NORMAL + PNEUMONIA). Re-run `prepare_multiclass.py` after adding images locally.
+| Dataset | Use | Source | License |
+|---|---|---|---|
+| Chest X-Ray Images (Pneumonia), Kermany et al. 2018 | Core Normal vs Pneumonia (5,856 images, pediatric, Guangzhou) | Hugging Face mirror `AiresPucrs/chest-xray` via `hf_hub_download` (no Kaggle needed) | CC BY 4.0 (original Mendeley release) |
+| COVID-QU-Ex (Tahir et al. 2021) | Phase 3: COVID-19, Non-COVID infection, Normal | Kaggle `anasmohammedtahir/covidqu` | CC BY-SA 4.0 (Kaggle metadata) |
+| Tuberculosis (TB) Chest X-ray Database (Rahman et al., IEEE Access 2020) | Phase 3: TB, Normal | Kaggle `tawsifurrahman/tuberculosis-tb-chest-xray-dataset` | "Data files © Original Authors", research use with citation |
 
----
+The TB choice: the Kaggle metadata API was queried for the candidate TB sets. This one is peer-reviewed, published by its authors, documents its image sources (NLM Montgomery/Shenzhen, Belarus, NIAID, RSNA) and has the expected `Normal` (3,500) and `Tuberculosis` (700 public) folders. Its terms are the authors' copyright with a request for citation, which fits non-commercial educational use; the images are never redistributed (data is git-ignored). The only CC-licensed alternative found (`yasserhessein/tuberculosis-chest-x-rays-images`, 29 MB) has no stated provenance, so it was rejected.
 
-## Objective 2 — Baseline CNN
+## Decisions log
 
-Custom 4-block CNN in `src/models.py` (`build_baseline_cnn`):
+| # | Decision | Why |
+|---|---|---|
+| D1 | **Patient-level split.** All three provided folders (train, val, test) are merged, then re-split 80/10/10 with `StratifiedGroupKFold` (seed 42) grouped by patient ID and stratified by subtype (normal / bacterial / viral). | Kermany has several X-rays per patient. In an earlier image-level split, 278 of 374 pneumonia test patients (74%) also had X-rays in the training set. Patient IDs come from filenames: `person<id>_...` for pneumonia, `[NORMAL2-]IM-<id>-...` for normal. Pneumonia IDs are treated as global across the original folders (170 IDs occur in both original train and test), which can only make groups larger. All 5,824 kept images have a parseable ID, so no random fallback was needed. |
+| D2 | The **original test folder is pooled too**, not kept as a separate test set. | The spec asks for an 80/10/10 split of the whole set, and the original folders are not patient-disjoint for pneumonia (see D1). |
+| D3 | Exact duplicates (SHA-256) and corrupt files are removed **before** splitting; split files are re-checked for patient and hash overlap before every training run. | A duplicate in two splits is leakage. |
+| D4 | **CLAHE after resizing**: grayscale, 224x224 (INTER_AREA), CLAHE (clip 2.0, 8x8 tiles), copied to 3 channels. | Applying CLAHE at a fixed resolution makes it behave the same for every source, which matters once datasets with different native sizes are mixed (Phase 3). One function (`src/data/preprocessing.py`) is used by training, Grad-CAM and the API. |
+| D5 | Normalization lives **inside the models** (`Rescaling(1/255)` for the baseline, `resnet50.preprocess_input` for ResNet50). | Every caller feeds the same uint8 RGB array, so the API cannot drift from training. |
+| D6 | Augmentation (rotation 15°, shift 0.1, zoom 0.1, horizontal flip, brightness and contrast ±10%) runs as Keras layers inside the model. Constant (black) fill. | These layers are active only in training mode, so validation, test and the API never see augmented images. Black fill avoids mirrored anatomy at the borders. |
+| D7 | **Kept ResNet50 although there is no GPU.** The spec's fallback is MobileNetV2 with fewer epochs on CPU-only machines. | TensorFlow has no GPU support on native Windows. ResNet50 was measured at about 3.5 min per epoch on this CPU (i5-13420H), so the full spec schedule (5 frozen + 3 fine-tune epochs) takes about 30 minutes. ResNet50 is objective 3. MobileNetV2 stays available (`--backbone mobilenet_v2`), and the Colab notebook covers GPU training. |
+| D8 | ResNet50 fine-tuning keeps **BatchNorm frozen**; if fine-tuning does not beat the frozen-backbone validation loss, the phase-1 weights are kept. Early stopping (patience 3, best weights restored) and LR reduction on plateau in every stage. | Re-estimating ImageNet BatchNorm statistics from batches of 32 is a common way fine-tuning goes wrong; the safeguard means phase 2 can only help. |
+| D9 | **Model selection on validation F1**; every reported metric is from the test split. | The test set stays an unbiased estimate of the chosen model. |
+| D10 | Class imbalance handled with `class_weight="balanced"` (Normal 1.844, Pneumonia 0.686), not resampling. | Keeps every image; the spec asks for class weights. |
+| D11 | Venv created with `--system-site-packages` from Python 3.12. | The folder sits in OneDrive; reusing the already installed, version-pinned TensorFlow 2.21 avoids syncing ~2 GB of packages. The previous `.venv` was an empty Python 3.14 environment. |
+| D12 | **Multi-class extension skipped in this run:** `KAGGLE_USERNAME` / `KAGGLE_KEY` are not set. The code is complete and was exercised end to end on stand-in folders with the real COVID-QU-Ex / TB layouts (Kermany pixels; not reported as results). | Spec rule: without credentials, finish everything else and skip the extension. Run `python -m src.data.multiclass` once the variables are set (or pass `--covidqu-dir` / `--tb-dir` for manual downloads). |
+| D13 | COVID-QU-Ex Normal / Non-COVID images partly **come from Kermany** (its dataset card lists `paultimothymooney/chest-xray-pneumonia`), resized to 256x256 PNG. The multi-class prep drops perceptual-hash (dHash, ≤6 of 64 bits) near-duplicates of Kermany images and keeps remaining near-duplicate clusters in one split. | SHA-256 cannot see a resized copy. Without this, the multi-class split would leak and the cross-dataset test would partly test on training images. |
+| D14 | Phase 3 balancing: Normal and Pneumonia take the same count from each source (capped at 1,200 per source); single-source classes (COVID, TB) up to 2,400; the split is stratified by class x source. | Stops "which dataset is this" from predicting the class within the shared classes, and keeps CPU training time reasonable. |
 
-- Conv 32 → 64 → 128 → 256, BatchNorm, MaxPool
-- GlobalAveragePooling → Dense(128) → Dropout(0.4) → sigmoid (2-class) or softmax (3+ classes)
-- Grad-CAM target: last conv block `conv4_out`
-
----
-
-## Objective 3 — ResNet50 transfer learning vs baseline
-
-`src/train.py` trains **both** models on the same splits and writes `results/model_comparison.csv` / `.md`.
-
-**ResNet50 protocol**
-
-1. ImageNet backbone, frozen; train the new head (`lr=1e-3`, up to 8 epochs).
-2. Unfreeze the **last 20** backbone layers, with BatchNorm kept frozen; fine-tune (`lr=1e-5`, up to 8 epochs). If fine-tuning doesn't beat phase 1 on validation loss, the phase-1 weights are kept.
-
-Every stage (the baseline gets up to 12 epochs) uses early stopping on validation loss (patience 3, best weights restored) and reduces the learning rate when validation loss stalls.
-3. The model with the highest **validation** F1 (baseline, ResNet50, or MobileNetV2 when enabled) is saved to `models/best_model.keras`. The test set is never used for this choice.
-
-On native Windows, TensorFlow is typically **CPU-only**. Training still uses **ResNet50** (not a substitute backbone) and always runs full epochs over the training set. On an 8-core laptop CPU an epoch takes about 3.5 minutes, so a full run takes 1–2 hours. `QUICK_TRAIN=1` runs a few batches per stage to check the pipeline; it does not produce a usable model.
-
-Optional extra comparison: `INCLUDE_MOBILENET=1 python src/train.py`.
-
-A GPU Colab notebook remains at `notebooks/ResNet50_Training_Colab.ipynb`.
-
----
-
-## Objective 4 — Metrics and class imbalance
-
-Held-out **test set only** (`src/evaluate.py`):
-
-- Accuracy, precision, recall, F1
-- Confusion matrix PNG
-- ROC-AUC (binary) or **macro OvR ROC-AUC** (multi-class)
-- Combined ROC plot: `results/roc_curve_comparison.png`
-
-Imbalance: `sklearn.utils.class_weight.compute_class_weight(class_weight="balanced")` is passed to `model.fit`.
-
-Previous CPU run (binary MobileNetV2 vs baseline, for reference). **These numbers are optimistic:** that run split by image, and about 74% of the pneumonia patients in its test set (278 of 374) had other X-rays in the training set.
-
-| Model | Accuracy | Precision | Recall | F1 | ROC-AUC |
-|-------|----------|-----------|--------|----|---------|
-| Baseline CNN | 73.04% | 73.04% | 100% | 84.42% | 0.670 |
-| Transfer MobileNetV2 | 93.00% | 95.74% | 94.63% | 95.18% | 0.979 |
-
-Re-run `python src/train.py` to refresh these tables for **ResNet50** and any extra classes.
-
----
-
-## Objective 5 — Grad-CAM
-
-`src/gradcam.py` finds the last Conv2D / DepthwiseConv2D layer **programmatically** (works for the baseline CNN, ResNet50 `conv5_block3_out`, MobileNetV2).
-
-Training writes 10 side-by-side samples under `results/gradcam_samples/`. The API returns a JPEG overlay as base64.
-
-Warm colors = stronger contribution to the predicted class.
-
----
-
-## Objective 6 — Web system
-
-```bash
-uvicorn backend.main:app --host 127.0.0.1 --port 8000
-```
-
-Open `http://127.0.0.1:8000`.
-
-| Method | Endpoint | Returns |
-|--------|----------|---------|
-| GET | `/health` | Model status, class names, Grad-CAM layer |
-| POST | `/predict` | `predicted_class`, `confidence`, `class_probabilities`, `gradcam_overlay_base64` |
-
-The frontend (`frontend/`) supports drag-and-drop upload, sample cases (including COVID/TB demos), probability bars for every class, and heatmap opacity.
-
----
-
-## Objective 7 — Multi-class COVID-19 and TB (optional)
-
-Classes, when present on disk: **NORMAL, PNEUMONIA, COVID, TB**.
-
-- 2 classes → binary sigmoid  
-- 3+ classes → softmax + macro metrics  
-
-API and UI pick up class names from `models/class_indices.json` after training.
-
----
-
-## Project layout
+## Project structure
 
 ```
 intership/
-├── data/                      # Created by prepare scripts
-│   ├── raw/                   # Downloads + optional extra/COVID, extra/TB
-│   ├── processed/             # Binary stratified split
-│   ├── processed_multiclass/  # 2–4 class stratified split
-│   └── preprocessed_224/      # 224×224 RGB
 ├── src/
-│   ├── config.py
-│   ├── prepare_data.py
-│   ├── prepare_multiclass.py
-│   ├── preprocess.py
-│   ├── splits.py              # patient-grouped stratified splitting
-│   ├── dataset.py             # loaders, augmentation, class weights
-│   ├── models.py              # Baseline CNN + ResNet50 (+ optional MobileNetV2)
-│   ├── train.py
-│   ├── evaluate.py
-│   ├── gradcam.py
-│   └── utils.py
-├── backend/main.py
-├── frontend/                  # index.html, style.css, app.js
-├── models/                    # best_model.keras, class_indices.json
-├── results/
-├── notebooks/ResNet50_Training_Colab.ipynb
+│   ├── config.py            # paths, seed, image size, CLAHE settings, class names
+│   ├── utils.py             # logging, seeding, device detection, hashing
+│   ├── plotting.py          # figure style (validated categorical palette)
+│   ├── data/
+│   │   ├── download.py      # Hugging Face download; Kaggle (env-var credentials only)
+│   │   ├── quality.py       # corrupt/duplicate checks, EDA figures
+│   │   ├── splits.py        # patient-grouped stratified splits
+│   │   ├── preprocessing.py # CLAHE pipeline shared by training, Grad-CAM and the API
+│   │   ├── loaders.py       # tf.data pipelines, augmentation, class weights
+│   │   ├── prepare.py       # Review-I data pipeline entry point
+│   │   └── multiclass.py    # Phase 3 multi-source dataset
+│   ├── models.py            # baseline CNN, ResNet50 / MobileNetV2 transfer models
+│   ├── train.py             # training, evaluation, model selection
+│   ├── evaluate.py          # metrics and figures
+│   ├── gradcam.py           # Grad-CAM + 10-image report
+│   └── cross_dataset.py     # Phase 3 cross-source generalization test
+├── backend/main.py          # FastAPI app
+├── frontend/                # index.html, style.css, app.js
 ├── tests/test_integration.py
-├── requirements.txt
-└── README.md
+├── notebooks/               # Colab notebook + generator
+├── splits/                  # file lists: binary/{train,val,test,removed}.csv
+├── results/                 # figures, tables, logs
+├── models/                  # trained models + class_names.json (git-ignored)
+└── data/                    # raw + preprocessed images (git-ignored)
 ```
 
----
+## How to run
 
-## Quick start
+From the project root, in Git Bash (use `.venv\Scripts\python` in cmd/PowerShell):
 
 ```bash
-pip install -r requirements.txt
+# 1. Environment (Python 3.12)
+python -m venv --system-site-packages .venv
+.venv/Scripts/python -m pip install -r requirements.txt
 
-python src/prepare_data.py
-python src/prepare_multiclass.py
-python -m src.preprocess
-python src/train.py
+# 2. Data: download, quality checks, EDA, patient-level split, CLAHE preprocessing
+.venv/Scripts/python -m src.data.prepare
 
-uvicorn backend.main:app --host 127.0.0.1 --port 8000
+# 3. Train + evaluate the baseline CNN and ResNet50 (~1 h on CPU)
+.venv/Scripts/python -m src.train --task binary
+
+# 4. Grad-CAM report (10 test images)
+.venv/Scripts/python -m src.gradcam
+
+# 5. App: then open http://127.0.0.1:8000
+.venv/Scripts/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+
+# 6. Integration test (starts its own server on a free port)
+.venv/Scripts/python tests/test_integration.py
 ```
+
+Phase 3 (needs `KAGGLE_USERNAME` and `KAGGLE_KEY` in the environment):
 
 ```bash
-python tests/test_integration.py
+.venv/Scripts/python -m src.data.multiclass          # or: --covidqu-dir <folder> --tb-dir <folder>
+.venv/Scripts/python -m src.train --task multiclass  # also makes it the model the app serves
+.venv/Scripts/python -m src.gradcam --task multiclass
+.venv/Scripts/python -m src.cross_dataset            # add --reverse to also train on COVID-QU-Ex
 ```
 
-**Environment flags**
-
-| Variable | Effect |
-|----------|--------|
-| `QUICK_TRAIN=1` | A few batches per stage, for checking the pipeline only |
-| `INCLUDE_MOBILENET=1` | Also train MobileNetV2 for a third comparison row |
-| `KAGGLE_USERNAME` / `KAGGLE_KEY` | Extra COVID / TB Kaggle datasets |
-
----
+`QUICK_TRAIN=1` runs a few batches per stage to check the pipeline; it does not produce usable models. On a GPU, use [notebooks/ResNet50_Training_Colab.ipynb](notebooks/ResNet50_Training_Colab.ipynb).
 
 ## Environment
 
-- Python 3.12, TensorFlow 2.x (CPU on native Windows ≥ 2.11)
-- Seed **42** (Python, NumPy, TensorFlow)
-- Not for clinical use
+Python 3.12.10, TensorFlow 2.21 / Keras 3.15 (CPU), Windows 11, Intel i5-13420H, 16 GB RAM. Seed 42 for Python, NumPy, TensorFlow and every split.

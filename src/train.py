@@ -1,240 +1,240 @@
-import glob
-import os
-import sys
+"""
+Training entry point.
 
-import numpy as np
+  python -m src.train --task binary       # Review-I: baseline CNN + ResNet50 on Kermany
+  python -m src.train --task multiclass   # Review-II Phase 3 (after src.data.multiclass)
+
+Models are selected on validation F1 (macro for multi-class); all reported metrics
+come from the held-out test split. QUICK_TRAIN=1 runs a few batches per stage.
+"""
+import argparse
+import os
+import shutil
+
 import pandas as pd
 import tensorflow as tf
-from PIL import Image
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.config import IMAGE_SIZE
-from src.dataset import create_datasets, compute_class_weights, get_default_data_dir
-from src.evaluate import evaluate_model_on_test, plot_training_curves, plot_roc_comparison, validation_f1
-from src.gradcam import find_target_conv_layer, make_gradcam_heatmap, overlay_gradcam
-from src.models import build_baseline_cnn, build_transfer_model, compile_model
-from src.utils import detect_device, logger, set_seed
+from src.config import (
+    BINARY_CLASSES,
+    BEST_MODEL_PATH,
+    CLASS_NAMES_PATH,
+    CLAHE_CLIP_LIMIT,
+    CLAHE_TILE_GRID,
+    DISPLAY_NAMES,
+    IMAGE_SIZE,
+    MODELS_DIR,
+    MULTICLASS_DISPLAY_NAMES,
+    MULTICLASS_ORDER,
+    RESULTS_DIR,
+    SEED,
+)
+from src.data.loaders import class_weights, load_split, make_dataset
+from src.data.splits import assert_no_overlap
+from src.evaluate import (
+    compute_metrics,
+    comparison_table,
+    plot_confusion_matrix,
+    plot_roc_curves,
+    plot_training_curves,
+    predict_labels,
+    predict_probs,
+    subtype_accuracy,
+)
+from src.gradcam import find_target_layer
+from src.models import build_baseline_cnn, build_transfer_model, compile_model, unfreeze_top
+from src.utils import detect_device, logger, save_json, set_seed
 
-
-def _training_budget():
-    """Maximum epochs per stage over the full training set; early stopping usually ends sooner."""
-    if os.environ.get("QUICK_TRAIN", "0") == "1":
-        # Pipeline check only: a few batches per stage, not a usable model
-        return {"baseline_epochs": 1, "phase1_epochs": 1, "phase2_epochs": 1, "steps": 20, "val_steps": 5}
-    return {"baseline_epochs": 12, "phase1_epochs": 8, "phase2_epochs": 8, "steps": None, "val_steps": None}
+QUICK = os.environ.get("QUICK_TRAIN", "0") == "1"
+# Epoch budgets from the project spec; early stopping may end a stage sooner
+BUDGET = {"baseline": 8, "frozen": 5, "finetune": 3}
+FINETUNE_LAYERS = 20
+DISPLAY_MODEL = {"baseline": "Baseline CNN", "resnet50": "ResNet50", "mobilenet_v2": "MobileNetV2"}
 
 
 def _callbacks():
     return [
-        # Keep the epoch with the lowest val_loss, not whatever the last epoch was
         tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=3, restore_best_weights=True, verbose=1),
         tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.3, patience=1, min_lr=1e-7, verbose=1),
     ]
 
 
-def _fit_kwargs(budget, class_weights):
-    kwargs = {
-        "epochs": None,
-        "class_weight": class_weights,
-        "callbacks": _callbacks(),
-        "verbose": 2,
-    }
-    if budget["steps"]:
-        kwargs["steps_per_epoch"] = budget["steps"]
-        kwargs["validation_steps"] = budget["val_steps"]
-    return kwargs
+def _fit(model, train_ds, val_ds, epochs, weights):
+    if QUICK:
+        train_ds, val_ds, epochs = train_ds.take(3), val_ds.take(2), 1
+    hist = model.fit(train_ds, validation_data=val_ds, epochs=epochs, class_weight=weights,
+                     callbacks=_callbacks(), verbose=2)
+    return hist.history
 
 
-def _combine_histories(*histories):
-    combined = {}
-    for hist in histories:
-        for k, v in hist.history.items():
-            combined.setdefault(k, []).extend(v)
-
-    class DummyHistory:
-        pass
-
-    dh = DummyHistory()
-    dh.history = combined
-    return dh
+def train_baseline(num_classes, train_ds, val_ds, weights):
+    model = compile_model(build_baseline_cnn(num_classes), num_classes, 1e-3)
+    logger.info(f"Baseline CNN: {model.count_params():,} parameters")
+    return model, _fit(model, train_ds, val_ds, BUDGET["baseline"], weights), None
 
 
-def _pred_index_and_label(raw_pred, class_names):
-    raw_pred = np.array(raw_pred)
-    if raw_pred.ndim == 2:
-        raw_pred = raw_pred[0]
-    if raw_pred.shape[-1] == 1 or raw_pred.ndim == 0:
-        p = float(np.squeeze(raw_pred))
-        idx = 1 if p >= 0.5 else 0
-        conf = p if idx == 1 else 1.0 - p
-        return idx, class_names[idx], conf
-    idx = int(np.argmax(raw_pred))
-    return idx, class_names[idx], float(raw_pred[idx])
+def train_transfer(backbone, num_classes, train_ds, val_ds, weights):
+    model, base = build_transfer_model(backbone, num_classes)
+    compile_model(model, num_classes, 1e-3)
+    logger.info(f"{backbone}: phase 1, frozen backbone, {BUDGET['frozen']} epochs at lr 1e-3")
+    h1 = _fit(model, train_ds, val_ds, BUDGET["frozen"], weights)
+    best_frozen = min(h1["val_loss"])
+    frozen_weights = model.get_weights()
 
-
-def _train_transfer(name, train_ds, val_ds, val_eval_ds, test_ds, class_names, class_weights, budget,
-                    metrics_list, roc_dict):
-    num_classes = len(class_names)
-    logger.info(f"Training transfer model: {name}")
-    model, backbone = build_transfer_model(model_name=name, input_shape=(224, 224, 3), num_classes=num_classes)
-    compile_model(model, num_classes, learning_rate=1e-3)
-
-    fit_common = _fit_kwargs(budget, class_weights)
-    fit_common["epochs"] = budget["phase1_epochs"]
-    logger.info("Phase 1: frozen backbone, train classification head")
-    hist1 = model.fit(train_ds, validation_data=val_ds, **fit_common)
-    phase1_best_val_loss = min(hist1.history["val_loss"])
-    phase1_weights = model.get_weights()
-
-    logger.info("Phase 2: unfreeze last 20 backbone layers, fine-tune")
-    backbone.trainable = True
-    for layer in backbone.layers[:-20]:
-        layer.trainable = False
-    # BatchNorm stays in inference mode: re-estimating its ImageNet statistics from
-    # small batches is the usual way fine-tuning goes wrong
-    for layer in backbone.layers:
-        if isinstance(layer, tf.keras.layers.BatchNormalization):
-            layer.trainable = False
-    compile_model(model, num_classes, learning_rate=1e-5)
-    fit_common = _fit_kwargs(budget, class_weights)
-    fit_common["epochs"] = budget["phase2_epochs"]
-    hist2 = model.fit(train_ds, validation_data=val_ds, **fit_common)
-    if min(hist2.history["val_loss"]) > phase1_best_val_loss:
+    logger.info(f"{backbone}: phase 2, fine-tune last {FINETUNE_LAYERS} layers, {BUDGET['finetune']} epochs at lr 1e-5")
+    unfreeze_top(base, FINETUNE_LAYERS)
+    compile_model(model, num_classes, 1e-5)
+    h2 = _fit(model, train_ds, val_ds, BUDGET["finetune"], weights)
+    if min(h2["val_loss"]) > best_frozen:
         logger.info("Fine-tuning did not beat the frozen-backbone val_loss; keeping phase-1 weights.")
-        model.set_weights(phase1_weights)
-
-    display_name = f"Transfer {name}"
-    plot_training_curves(_combine_histories(hist1, hist2), display_name)
-    metrics, roc, *_ = evaluate_model_on_test(model, test_ds, display_name, class_names=class_names)
-    metrics["Val F1-Score"] = validation_f1(model, val_eval_ds)
-    metrics_list.append(metrics)
-    roc_dict[display_name] = roc
-    return model, metrics
+        model.set_weights(frozen_weights)
+    history = {k: h1[k] + h2[k] for k in h1 if k in h2}
+    return model, history, len(h1["loss"]) + 1
 
 
-def run_training_pipeline():
-    set_seed(42)
+def run(task: str, backbone: str):
+    set_seed(SEED)
     device = detect_device()
-    budget = _training_budget()
-    logger.info(f"Execution Device: {device} | budget={budget}")
+    logger.info(f"Task={task} device={device} backbone={backbone} quick={QUICK}")
 
-    train_ds, val_ds, test_ds, class_names = create_datasets()
+    results_dir = RESULTS_DIR if task == "binary" else RESULTS_DIR / task
+    model_dir = MODELS_DIR / task
+    results_dir.mkdir(parents=True, exist_ok=True)
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    train_df, val_df, test_df = (load_split(task, s) for s in ("train", "val", "test"))
+    if task == "binary":
+        class_names, display = BINARY_CLASSES, DISPLAY_NAMES
+    else:
+        present = set(train_df["label"])
+        class_names = [c for c in MULTICLASS_ORDER if c in present]
+        display = MULTICLASS_DISPLAY_NAMES
     num_classes = len(class_names)
-    class_weights = compute_class_weights(class_names=class_names)
 
-    # One full pass over val for model selection; val_ds itself may be repeated for fit()
-    val_eval_ds = val_ds.prefetch(tf.data.AUTOTUNE)
-    if budget["steps"]:
-        train_ds = train_ds.repeat()
-        val_ds = val_ds.repeat()
-    train_ds = train_ds.prefetch(tf.data.AUTOTUNE)
-    val_ds = val_ds.prefetch(tf.data.AUTOTUNE)
-    test_ds = test_ds.prefetch(tf.data.AUTOTUNE)
+    # Re-check the split files before spending an hour training on them
+    all_df = pd.concat([d.assign(split=s) for d, s in ((train_df, "train"), (val_df, "val"), (test_df, "test"))])
+    assert_no_overlap(all_df, "sha256")
+    if "patient_id" in all_df:
+        assert_no_overlap(all_df.dropna(subset=["patient_id"]), "patient_id")
+    logger.info(f"Classes: {class_names}; train/val/test = {len(train_df)}/{len(val_df)}/{len(test_df)}")
 
-    metrics_list = []
-    roc_dict = {}
+    train_ds = make_dataset(train_df, class_names, training=True)
+    val_ds = make_dataset(val_df, class_names, training=False)
+    test_ds = make_dataset(test_df, class_names, training=False)
+    weights = class_weights(train_df, class_names)
 
-    logger.info("Training Baseline CNN...")
-    baseline_model = build_baseline_cnn(input_shape=(224, 224, 3), num_classes=num_classes)
-    compile_model(baseline_model, num_classes, learning_rate=1e-3)
-    fit_common = _fit_kwargs(budget, class_weights)
-    fit_common["epochs"] = budget["baseline_epochs"]
-    history_baseline = baseline_model.fit(train_ds, validation_data=val_ds, **fit_common)
-    plot_training_curves(history_baseline, "Baseline CNN")
-    baseline_metrics, baseline_roc, *_ = evaluate_model_on_test(
-        baseline_model, test_ds, "Baseline CNN", class_names=class_names
-    )
-    baseline_metrics["Val F1-Score"] = validation_f1(baseline_model, val_eval_ds)
-    metrics_list.append(baseline_metrics)
-    roc_dict["Baseline CNN"] = baseline_roc
-    candidates = [("Baseline CNN", baseline_model, baseline_metrics)]
+    runs = {}
+    for key in ("baseline", backbone):
+        logger.info(f"===== Training {DISPLAY_MODEL[key]} =====")
+        if key == "baseline":
+            model, history, ft_start = train_baseline(num_classes, train_ds, val_ds, weights)
+        else:
+            model, history, ft_start = train_transfer(key, num_classes, train_ds, val_ds, weights)
+        name = DISPLAY_MODEL[key]
+        slug = name.lower().replace(" ", "_")
+        model.save(model_dir / f"{slug}.keras")
+        pd.DataFrame(history).rename_axis("epoch").to_csv(results_dir / f"history_{slug}.csv")
+        plot_training_curves(history, name, results_dir / f"training_curves_{slug}.png", ft_start)
 
-    resnet_model, resnet_metrics = _train_transfer(
-        "resnet50", train_ds, val_ds, val_eval_ds, test_ds, class_names, class_weights, budget,
-        metrics_list, roc_dict
-    )
-    candidates.append(("Transfer resnet50", resnet_model, resnet_metrics))
+        y_val, p_val = predict_probs(model, val_ds)
+        val_metrics = compute_metrics(y_val, p_val, class_names)
+        y_test, p_test = predict_probs(model, test_ds)
+        test_metrics = compute_metrics(y_test, p_test, class_names)
+        y_pred = predict_labels(p_test)
+        logger.info(f"{name}: val F1={val_metrics['f1']:.4f} | test acc={test_metrics['accuracy']:.4f} "
+                    f"F1={test_metrics['f1']:.4f} AUC={test_metrics['roc_auc']:.4f}")
 
-    include_mobilenet = os.environ.get("INCLUDE_MOBILENET", "0") == "1"
-    if include_mobilenet:
-        mobilenet_model, mobilenet_metrics = _train_transfer(
-            "mobilenet_v2", train_ds, val_ds, val_eval_ds, test_ds, class_names, class_weights, budget,
-            metrics_list, roc_dict
-        )
-        candidates.append(("Transfer mobilenet_v2", mobilenet_model, mobilenet_metrics))
+        preds = test_df.copy()
+        preds["true"] = [class_names[i] for i in y_test]
+        preds["pred"] = [class_names[i] for i in y_pred]
+        for i, c in enumerate(class_names):
+            preds[f"p_{c}"] = p_test[:, i]
+        preds.to_csv(results_dir / f"test_predictions_{slug}.csv", index=False)
+        plot_confusion_matrix(test_metrics["confusion_matrix"], class_names, f"{name}: test confusion matrix",
+                              results_dir / f"confusion_matrix_{slug}.png", display)
+        runs[name] = dict(model=model, val=val_metrics, test=test_metrics, y_test=y_test, p_test=p_test,
+                          y_pred=y_pred, slug=slug, epochs=len(history["loss"]))
 
-    # Pick on validation F1 so the test set stays an unbiased estimate of the chosen model
-    best_name, best_model, _ = max(candidates, key=lambda c: c[2]["Val F1-Score"])
-    for name, _, m in candidates:
-        logger.info(f"{name}: val F1 = {m['Val F1-Score']:.4f}")
+    plot_roc_curves({n: (r["y_test"], r["p_test"]) for n, r in runs.items()}, class_names,
+                    results_dir / "roc_curves.png", display)
 
-    comparison_df = pd.DataFrame(metrics_list)
-    os.makedirs("./results", exist_ok=True)
-    comparison_df.to_csv("./results/model_comparison.csv", index=False)
-    print("\n--- MODEL COMPARISON TABLE ---")
-    print(comparison_df.to_string(index=False))
-    try:
-        md_table = comparison_df.to_markdown(index=False)
-    except Exception:
-        md_table = comparison_df.to_string(index=False)
-    with open("./results/model_comparison.md", "w") as f:
-        f.write("# Model Performance Comparison (Held-Out Test Set)\n\n")
-        f.write(md_table + "\n")
-        f.write(f"\nClasses: {', '.join(class_names)}\n")
-        f.write(f"\nSaved model: **{best_name}** (highest validation F1; test metrics were not used to choose it).\n")
-        f.write("\nResNet50 is the required transfer-learning backbone. ")
-        f.write("MobileNetV2 is optional (`INCLUDE_MOBILENET=1`).\n")
+    # Comparison table (test metrics) with the validation F1 used for selection
+    rows = []
+    for n, r in runs.items():
+        t = r["test"]
+        row = {"Model": n, "Accuracy": t["accuracy"], "Precision": t["precision"], "Recall": t["recall"],
+               "F1": t["f1"], "ROC-AUC": t["roc_auc"]}
+        if num_classes == 2:
+            row.update({"Specificity": t["specificity"], "TP": t["tp"], "TN": t["tn"], "FP": t["fp"], "FN": t["fn"]})
+        row.update({"Val F1 (selection)": r["val"]["f1"], "Epochs": r["epochs"]})
+        rows.append(row)
+    label = "binary Normal vs Pneumonia" if task == "binary" else f"{num_classes}-class"
+    comparison_table(rows, results_dir / "model_comparison.csv", results_dir / "model_comparison.md",
+                     f"Model comparison, held-out test set ({label}, n={len(test_df)})")
 
-    plot_roc_comparison(roc_dict)
+    if num_classes > 2:
+        per_class = [{"Model": n, "Class": display.get(c, c), **v}
+                     for n, r in runs.items() for c, v in r["test"]["per_class"].items()]
+        comparison_table(per_class, results_dir / "per_class_metrics.csv", results_dir / "per_class_metrics.md",
+                         f"Per-class test metrics ({num_classes}-class, one-vs-rest ROC-AUC)")
 
-    os.makedirs("./models", exist_ok=True)
-    best_model.save("./models/best_model.keras")
-    logger.info(f"Saved best model ({best_name}) to ./models/best_model.keras")
+    if "source" in test_df and test_df["source"].nunique() > 1:
+        # Shortcut check: does accuracy for a class depend on which dataset the image came from?
+        per_source = []
+        for n, r in runs.items():
+            d = test_df.assign(correct=(r["y_test"] == r["y_pred"]))
+            g = d.groupby(["label", "source"])["correct"].agg(n="size", accuracy="mean").reset_index()
+            per_source.append(g.assign(model=n))
+        pd.concat(per_source).to_csv(results_dir / "per_source_accuracy.csv", index=False)
 
-    logger.info("Generating Grad-CAM visualizations for test images...")
-    test_dir = os.path.join(get_default_data_dir(), "test")
-    target_conv_name = find_target_conv_layer(best_model)
-    gradcam_samples_dir = "./results/gradcam_samples"
-    os.makedirs(gradcam_samples_dir, exist_ok=True)
+    if task == "binary":
+        sub_rows = []
+        for n, r in runs.items():
+            s = subtype_accuracy(test_df, r["y_test"], r["y_pred"], class_names)
+            sub_rows.append(s.assign(model=n))
+        pd.concat(sub_rows)[["model", "subtype", "n", "correct", "accuracy"]].to_csv(
+            results_dir / "subtype_accuracy.csv", index=False)
 
-    selected_files = []
-    per_class = max(1, 10 // max(len(class_names), 1))
-    for idx, cls in enumerate(class_names):
-        files = glob.glob(os.path.join(test_dir, cls, "*.*"))
-        selected_files.extend([(p, idx) for p in files[:per_class]])
-    selected_files = selected_files[:10]
+    best_name = max(runs, key=lambda n: runs[n]["val"]["f1"])
+    best = runs[best_name]
+    logger.info(f"Selected {best_name} (highest validation F1 = {best['val']['f1']:.4f})")
+    leakage_note = None
+    if best["test"]["accuracy"] > 0.99:
+        leakage_note = ("Test accuracy > 99%: patient and file-hash overlap between splits were re-checked "
+                        "(none found); see README for the source-shortcut analysis.")
+        logger.warning(leakage_note)
 
-    gradcam_report = []
-    for sample_i, (img_path, true_label_idx) in enumerate(selected_files):
-        pil_img = Image.open(img_path).convert("RGB").resize(IMAGE_SIZE)
-        img_arr = np.array(pil_img)
-        img_input = np.expand_dims(img_arr, axis=0)
-        raw = best_model.predict(img_input, verbose=0)
-        pred_idx, pred_label, confidence = _pred_index_and_label(raw, class_names)
-        true_label = class_names[true_label_idx]
-        try:
-            heatmap = make_gradcam_heatmap(img_input, best_model, target_conv_name, pred_index=pred_idx)
-            overlay, _ = overlay_gradcam(img_arr, heatmap, alpha=0.45)
-            side_by_side = np.hstack([img_arr, overlay])
-            out_filename = f"sample_{sample_i + 1}_{true_label}_pred_{pred_label}_{confidence:.2f}.jpg"
-            Image.fromarray(side_by_side).save(os.path.join(gradcam_samples_dir, out_filename))
-            gradcam_report.append({
-                "Sample": sample_i + 1,
-                "File": os.path.basename(img_path),
-                "True Class": true_label,
-                "Predicted Class": pred_label,
-                "Confidence": f"{confidence * 100:.2f}%",
-                "Correct": true_label == pred_label,
-                "Saved Image": out_filename,
-            })
-            logger.info(f"Saved Grad-CAM: {out_filename}")
-        except Exception as e:
-            logger.error(f"Grad-CAM generation failed for {img_path}: {e}")
+    meta = {
+        "task": task,
+        "classes": class_names,
+        "display_names": {c: display.get(c, c) for c in class_names},
+        "model": best_name,
+        "model_file": f"{best['slug']}.keras",
+        "target_layer": find_target_layer(best["model"]),
+        "threshold": 0.5 if num_classes == 2 else None,
+        "preprocessing": {"steps": ["grayscale", f"resize {IMAGE_SIZE[0]}x{IMAGE_SIZE[1]} (INTER_AREA)",
+                                    "CLAHE", "3-channel RGB"],
+                          "clahe_clip_limit": CLAHE_CLIP_LIMIT, "clahe_tile_grid": list(CLAHE_TILE_GRID)},
+        "selection": "highest validation F1" + (" (macro)" if num_classes > 2 else ""),
+        "val_f1": best["val"]["f1"],
+        "test_metrics": {k: v for k, v in best["test"].items() if k != "per_class"},
+        "quick_train": QUICK,
+    }
+    save_json(meta, model_dir / "class_names.json")
+    # The app serves whichever task was trained most recently
+    shutil.copy(model_dir / meta["model_file"], BEST_MODEL_PATH)
+    save_json(meta, CLASS_NAMES_PATH)
+    save_json({n: {"val": r["val"], "test": r["test"]} for n, r in runs.items()} | {
+        "selected": best_name, "leakage_note": leakage_note}, results_dir / "metrics.json")
+    logger.info(f"Saved {BEST_MODEL_PATH} and {CLASS_NAMES_PATH}")
 
-    pd.DataFrame(gradcam_report).to_csv(os.path.join(gradcam_samples_dir, "gradcam_summary.csv"), index=False)
-    logger.info("Grad-CAM generation completed.")
-    return comparison_df
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task", choices=["binary", "multiclass"], default="binary")
+    parser.add_argument("--backbone", choices=["resnet50", "mobilenet_v2"], default="resnet50")
+    args = parser.parse_args()
+    run(args.task, args.backbone)
 
 
 if __name__ == "__main__":
-    run_training_pipeline()
+    main()

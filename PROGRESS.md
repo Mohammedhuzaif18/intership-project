@@ -10,15 +10,15 @@
 
 ## REVIEW-I · Phase 1: Data and core ML
 
-- [ ] 1. Environment: venv, requirements.txt, dependencies installed, GPU detection; MobileNetV2 fallback rule applied or justified; Colab-ready notebook.
-- [ ] 2. Data: download Kermany via `hf_hub_download`, verify, print tree + counts, merge folders, patient-level stratified 80/10/10 split (seed 42), file lists in `./splits`, class counts per split.
-- [ ] 3. EDA + quality checks: class-count bar chart, 8 samples per class, image-size stats, intensity histograms, corrupt + exact-duplicate removal (file hash) with counts, bacterial vs viral counts.
-- [ ] 4. Preprocessing: CLAHE, RGB, 224x224, normalization; train-only augmentation (rotation 15, shift 0.1, zoom 0.1, h-flip, brightness/contrast); before/after examples; class weights.
-- [ ] 5. Baseline CNN (3-4 conv blocks, up to 8 epochs).
-- [ ] 6. ResNet50 transfer learning (ImageNet; 5 frozen epochs, then 3 fine-tune epochs on last ~20 layers at low LR; class weights).
-- [ ] 7. Test-set-only evaluation: accuracy, precision, recall, F1, confusion matrix, ROC-AUC, bacterial vs viral accuracy; confusion matrices, ROC curves, training curves, comparison table in `./results`.
-- [ ] 8. Best model saved as `.keras` + `class_names.json`.
-- [ ] 9. REVIEW1_SUMMARY.md; commit; tag `review-1`.
+- [x] 1. Environment: `.venv` (Python 3.12, `--system-site-packages`), pinned requirements.txt installed; no GPU (TF on native Windows is CPU-only). Kept ResNet50 instead of the MobileNetV2 fallback because measured CPU speed (~3.5 min/epoch) fits the 5+3 epoch schedule; Colab notebook generated (see step 1b note in README).
+- [x] 2. Data: Kermany downloaded via `hf_hub_download`, tree + counts logged (5856 images); train/val/test folders merged and re-split 80/10/10 by patient (StratifiedGroupKFold, seed 42, 3117 patients, 0 unparsed ids); file lists in `splits/binary/`; counts in `results/split_counts.csv`.
+- [x] 3. EDA + QC: figures in `results/eda/`; 0 corrupt files, 32 exact duplicates removed (SHA-256, listed in `splits/binary/removed.csv`); 2,760 bacterial vs 1,485 viral pneumonia images.
+- [x] 4. Preprocessing: grayscale -> 224x224 (INTER_AREA) -> CLAHE (clip 2.0, 8x8) -> RGB in `src/data/preprocessing.py`; normalization inside each model; train-only augmentation layers; before/after + augmentation figures in `results/`; balanced class weights (Normal 1.844, Pneumonia 0.686).
+- [x] 5. Baseline CNN: 4 conv blocks (422,881 params), 8 epochs; test acc 94.2%, F1 0.961, AUC 0.986.
+- [x] 6. ResNet50: ImageNet, frozen phase early-stopped after 4 of 5 epochs (best = epoch 1), fine-tuned last 20 layers (BatchNorm frozen) 3 epochs at 1e-5, class weights; test acc 95.7%, F1 0.971, AUC 0.993.
+- [x] 7. Test-only evaluation in `results/`: comparison table, confusion matrices, ROC curves, training curves, subtype accuracy (ResNet50 bacterial 98.2%, viral 94.6%), 95% CIs + McNemar (`statistical_comparison.json`), size-shortcut probe (AUC 0.912).
+- [x] 8. ResNet50 selected on validation F1 (0.962); saved to `models/best_model.keras` + `models/class_names.json` (per-task copies in `models/binary/`).
+- [x] 9. REVIEW1_SUMMARY.md written; Review-I committed and tagged `review-1`.
 
 ## REVIEW-II · Phase 2: Explainability and app
 

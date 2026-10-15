@@ -1,193 +1,183 @@
-import os
+"""Metrics and figures. Reported numbers come from the test split only."""
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_recall_fscore_support,
     precision_score,
     recall_score,
-    f1_score,
     roc_auc_score,
-    confusion_matrix,
     roc_curve,
 )
-from src.utils import logger
+
+from src.config import BINARY_THRESHOLD
+from src.plotting import CLASS_COLORS, GRID, MODEL_COLORS, SEQ_BLUE, SERIES, TEXT_2, plt, save
 
 
-def _unpack_labels_and_probs(model, test_ds):
-    y_true = []
-    y_pred_probs = []
-
-    for images, labels in test_ds:
-        probs = model.predict(images, verbose=0)
-        label_np = labels.numpy()
-        if label_np.ndim > 1 and label_np.shape[-1] > 1:
-            y_true.extend(np.argmax(label_np, axis=1))
+def predict_probs(model, ds):
+    """Returns (y_true class indices, probabilities of shape (n, n_classes))."""
+    y_true, probs = [], []
+    for images, labels in ds:
+        p = model.predict_on_batch(images)
+        p = np.asarray(p)
+        labels = labels.numpy()
+        if p.shape[-1] == 1:
+            p = np.concatenate([1.0 - p, p], axis=1)
+            y_true.append(labels[:, 0].astype(int))
         else:
-            y_true.extend(label_np.flatten())
-        y_pred_probs.append(probs)
-
-    y_true = np.array(y_true, dtype=int)
-    y_pred_probs = np.concatenate(y_pred_probs, axis=0)
-    return y_true, y_pred_probs
+            y_true.append(labels.argmax(axis=1))
+        probs.append(p)
+    return np.concatenate(y_true), np.concatenate(probs)
 
 
-def validation_f1(model, val_ds):
-    """F1 on the validation set (macro for multi-class), used to pick the best model."""
-    y_true, y_pred_probs = _unpack_labels_and_probs(model, val_ds)
-    if y_pred_probs.ndim == 2 and y_pred_probs.shape[-1] > 1:
-        return float(f1_score(y_true, np.argmax(y_pred_probs, axis=1), average="macro", zero_division=0))
-    return float(f1_score(y_true, (y_pred_probs.flatten() >= 0.5).astype(int), zero_division=0))
+def predict_labels(probs: np.ndarray) -> np.ndarray:
+    if probs.shape[1] == 2:
+        return (probs[:, 1] >= BINARY_THRESHOLD).astype(int)
+    return probs.argmax(axis=1)
 
 
-def evaluate_model_on_test(model, test_ds, model_name: str, results_dir: str = "./results", class_names=None):
-    """
-    Held-out test evaluation: accuracy, precision, recall, F1, confusion matrix, ROC-AUC.
-    Supports binary sigmoid and multi-class softmax outputs.
-    """
-    os.makedirs(results_dir, exist_ok=True)
-    logger.info(f"Evaluating {model_name} on held-out test set...")
-
-    if class_names is None:
-        class_names = ["NORMAL", "PNEUMONIA"]
-
-    y_true, y_pred_probs = _unpack_labels_and_probs(model, test_ds)
-    multi = y_pred_probs.ndim == 2 and y_pred_probs.shape[-1] > 1
-
-    if multi:
-        y_pred = np.argmax(y_pred_probs, axis=1)
-        avg = "macro"
-        acc = accuracy_score(y_true, y_pred)
-        prec = precision_score(y_true, y_pred, average=avg, zero_division=0)
-        rec = recall_score(y_true, y_pred, average=avg, zero_division=0)
-        f1 = f1_score(y_true, y_pred, average=avg, zero_division=0)
-        try:
-            auc_val = roc_auc_score(y_true, y_pred_probs, multi_class="ovr", average="macro")
-        except ValueError:
-            auc_val = float("nan")
-        cm = confusion_matrix(y_true, y_pred, labels=list(range(len(class_names))))
-        positive_scores = y_pred_probs
+def compute_metrics(y_true, probs, class_names) -> dict:
+    y_pred = predict_labels(probs)
+    labels = list(range(len(class_names)))
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    m = {"accuracy": accuracy_score(y_true, y_pred), "n": int(len(y_true)), "confusion_matrix": cm.tolist()}
+    if len(class_names) == 2:
+        tn, fp, fn, tp = cm.ravel()
+        m.update({
+            "precision": precision_score(y_true, y_pred, zero_division=0),
+            "recall": recall_score(y_true, y_pred, zero_division=0),
+            "specificity": tn / (tn + fp) if tn + fp else 0.0,
+            "f1": f1_score(y_true, y_pred, zero_division=0),
+            "roc_auc": roc_auc_score(y_true, probs[:, 1]) if len(set(y_true)) > 1 else float("nan"),
+            "tp": int(tp), "tn": int(tn), "fp": int(fp), "fn": int(fn),
+        })
     else:
-        scores = y_pred_probs.flatten()
-        y_pred = (scores >= 0.5).astype(int)
-        acc = accuracy_score(y_true, y_pred)
-        prec = precision_score(y_true, y_pred, zero_division=0)
-        rec = recall_score(y_true, y_pred, zero_division=0)
-        f1 = f1_score(y_true, y_pred, zero_division=0)
-        auc_val = roc_auc_score(y_true, scores)
-        cm = confusion_matrix(y_true, y_pred)
-        positive_scores = scores
-
-    metrics = {
-        "Model": model_name,
-        "Accuracy": float(acc),
-        "Precision": float(prec),
-        "Recall": float(rec),
-        "F1-Score": float(f1),
-        "ROC-AUC": float(auc_val) if auc_val == auc_val else None,
-    }
-
-    logger.info(f"--- Test Results for {model_name} ---")
-    logger.info(f"Accuracy:  {acc:.4f}")
-    logger.info(f"Precision: {prec:.4f}")
-    logger.info(f"Recall:    {rec:.4f}")
-    logger.info(f"F1-Score:  {f1:.4f}")
-    logger.info(f"ROC-AUC:   {auc_val}")
-    logger.info(f"Confusion Matrix:\n{cm}")
-
-    if acc > 0.99:
-        logger.warning(f"Test accuracy {acc:.4f} > 99%. Checking for potential data leakage...")
-
-    plt.figure(figsize=(max(6, len(class_names) + 2), max(5, len(class_names) + 1)))
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
-                xticklabels=class_names, yticklabels=class_names)
-    plt.title(f"Confusion Matrix - {model_name}")
-    plt.ylabel("True Label")
-    plt.xlabel("Predicted Label")
-    plt.tight_layout()
-    cm_path = os.path.join(results_dir, f"confusion_matrix_{model_name.lower().replace(' ', '_')}.png")
-    plt.savefig(cm_path, dpi=300)
-    plt.close()
-    logger.info(f"Saved confusion matrix plot to: {cm_path}")
-
-    if multi:
-        fpr, tpr = None, None
-        roc_payload = ("multiclass", y_true, positive_scores, auc_val)
-    else:
-        fpr, tpr, _ = roc_curve(y_true, positive_scores)
-        roc_payload = (fpr, tpr, auc_val)
-
-    return metrics, roc_payload, y_true, y_pred, y_pred_probs
+        p, r, f, s = precision_recall_fscore_support(y_true, y_pred, labels=labels, zero_division=0)
+        m.update({
+            "precision": float(p.mean()),
+            "recall": float(r.mean()),
+            "f1": float(f.mean()),
+            "weighted_f1": f1_score(y_true, y_pred, average="weighted", zero_division=0),
+            "roc_auc": _ovr_auc(y_true, probs, labels),
+            "per_class": {
+                c: {"precision": float(p[i]), "recall": float(r[i]), "f1": float(f[i]), "support": int(s[i]),
+                    "roc_auc": _single_auc(y_true == i, probs[:, i])}
+                for i, c in enumerate(class_names)
+            },
+        })
+    return {k: (float(v) if isinstance(v, (np.floating, float)) else v) for k, v in m.items()}
 
 
-def plot_training_curves(history, model_name: str, results_dir: str = "./results"):
-    os.makedirs(results_dir, exist_ok=True)
-    plt.figure(figsize=(12, 5))
-
-    plt.subplot(1, 2, 1)
-    plt.plot(history.history.get("loss", []), label="Train Loss", color="crimson")
-    if "val_loss" in history.history:
-        plt.plot(history.history.get("val_loss", []), label="Val Loss", color="navy", linestyle="--")
-    plt.title(f"{model_name} Loss Curve")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-
-    plt.subplot(1, 2, 2)
-    acc_key = "accuracy" if "accuracy" in history.history else "binary_accuracy"
-    plt.plot(history.history.get(acc_key, []), label="Train Acc", color="crimson")
-    if f"val_{acc_key}" in history.history:
-        plt.plot(history.history.get(f"val_{acc_key}", []), label="Val Acc", color="navy", linestyle="--")
-    plt.title(f"{model_name} Accuracy Curve")
-    plt.xlabel("Epoch")
-    plt.ylabel("Accuracy")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    save_path = os.path.join(results_dir, f"training_curves_{model_name.lower().replace(' ', '_')}.png")
-    plt.savefig(save_path, dpi=300)
-    plt.close()
-    logger.info(f"Saved training curves to: {save_path}")
+def _single_auc(y_bin, scores):
+    return float(roc_auc_score(y_bin, scores)) if 0 < y_bin.sum() < len(y_bin) else float("nan")
 
 
-def plot_roc_comparison(roc_curves: dict, results_dir: str = "./results"):
-    os.makedirs(results_dir, exist_ok=True)
-    plt.figure(figsize=(7, 6))
-    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+def _ovr_auc(y_true, probs, labels):
+    present = [i for i in labels if (y_true == i).any()]
+    if len(present) < 2:
+        return float("nan")
+    return float(np.mean([_single_auc(y_true == i, probs[:, i]) for i in present]))
 
-    for idx, (name, payload) in enumerate(roc_curves.items()):
-        color = colors[idx % len(colors)]
-        # Binary payloads start with an fpr array, so check the type before comparing
-        if isinstance(payload[0], str) and payload[0] == "multiclass":
-            _, y_true, probs, auc_val = payload
-            n_classes = probs.shape[1]
-            mean_tpr = []
-            mean_fpr = np.linspace(0, 1, 100)
-            for k in range(n_classes):
-                y_bin = (y_true == k).astype(int)
-                if len(np.unique(y_bin)) < 2:
-                    continue
-                fpr_k, tpr_k, _ = roc_curve(y_bin, probs[:, k])
-                mean_tpr.append(np.interp(mean_fpr, fpr_k, tpr_k))
-            if mean_tpr:
-                plt.plot(mean_fpr, np.mean(mean_tpr, axis=0), color=color, lw=2,
-                         label=f"{name} (macro AUC = {auc_val:.4f})")
-        else:
-            fpr, tpr, auc_val = payload
-            plt.plot(fpr, tpr, color=color, lw=2, label=f"{name} (AUC = {auc_val:.4f})")
 
-    plt.plot([0, 1], [0, 1], color="gray", linestyle="--", lw=1.5, label="Random Guess")
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate (1 - Specificity)")
-    plt.ylabel("True Positive Rate (Sensitivity / Recall)")
-    plt.title("ROC Curves Comparison (Test Set)")
-    plt.legend(loc="lower right", fontsize=8)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    save_path = os.path.join(results_dir, "roc_curve_comparison.png")
-    plt.savefig(save_path, dpi=300)
-    plt.close()
-    logger.info(f"Saved ROC comparison plot to: {save_path}")
+def subtype_accuracy(df: pd.DataFrame, y_true, y_pred, class_names) -> pd.DataFrame:
+    """Accuracy per subtype (bacterial / viral pneumonia, normal) where the subtype is known."""
+    d = df.assign(correct=(y_true == y_pred))
+    out = d.groupby("subtype")["correct"].agg(n="size", correct="sum")
+    out["accuracy"] = out["correct"] / out["n"]
+    return out.reset_index()
+
+
+# ---------- Figures ----------
+
+def plot_confusion_matrix(cm, class_names, title, path, display=None):
+    cm = np.asarray(cm)
+    display = display or {}
+    names = [display.get(c, c) for c in class_names]
+    pct = cm / cm.sum(axis=1, keepdims=True).clip(min=1)
+    size = 3.2 + 0.9 * len(class_names)
+    fig, ax = plt.subplots(figsize=(size, size * 0.85))
+    ax.imshow(pct, cmap=SEQ_BLUE, vmin=0, vmax=1)
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            dark = pct[i, j] > 0.55
+            ax.text(j, i, f"{cm[i, j]}\n{pct[i, j]:.1%}", ha="center", va="center", fontsize=10,
+                    color="white" if dark else "#0b0b0b")
+    ax.set_xticks(range(len(names)), names, rotation=20 if len(names) > 2 else 0, ha="right" if len(names) > 2 else "center")
+    ax.set_yticks(range(len(names)), names)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_title(title)
+    ax.grid(False)
+    for s in ax.spines.values():
+        s.set_visible(False)
+    save(fig, path)
+
+
+def plot_roc_curves(curves: dict, class_names, path, display=None):
+    """curves: {model name: (y_true, probs)}. Binary: one panel; multi-class: one OvR panel per model."""
+    display = display or {}
+    if len(class_names) == 2:
+        fig, ax = plt.subplots(figsize=(5.2, 4.6))
+        for i, (name, (y_true, probs)) in enumerate(curves.items()):
+            fpr, tpr, _ = roc_curve(y_true, probs[:, 1])
+            auc = roc_auc_score(y_true, probs[:, 1])
+            ax.plot(fpr, tpr, color=MODEL_COLORS.get(name, SERIES[i]), label=f"{name} (AUC {auc:.3f})")
+        _roc_axes(ax, "ROC curves, test set")
+        save(fig, path)
+        return
+    fig, axes = plt.subplots(1, len(curves), figsize=(5 * len(curves), 4.6), squeeze=False)
+    for ax, (name, (y_true, probs)) in zip(axes[0], curves.items()):
+        for i, cls in enumerate(class_names):
+            y_bin = (y_true == i)
+            if not 0 < y_bin.sum() < len(y_bin):
+                continue
+            fpr, tpr, _ = roc_curve(y_bin, probs[:, i])
+            ax.plot(fpr, tpr, color=CLASS_COLORS.get(cls, SERIES[i]),
+                    label=f"{display.get(cls, cls)} (AUC {roc_auc_score(y_bin, probs[:, i]):.3f})")
+        _roc_axes(ax, f"{name}: one-vs-rest ROC, test set")
+    fig.tight_layout()
+    save(fig, path)
+
+
+def _roc_axes(ax, title):
+    ax.plot([0, 1], [0, 1], color=GRID, linestyle="--", linewidth=1.2, label="Chance")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.02)
+    ax.set_xlabel("False positive rate (1 - specificity)")
+    ax.set_ylabel("True positive rate (sensitivity)")
+    ax.set_title(title)
+    ax.legend(loc="lower right")
+
+
+def plot_training_curves(history: dict, name, path, fine_tune_start=None):
+    epochs = np.arange(1, len(history["loss"]) + 1)
+    fig, axes = plt.subplots(1, 2, figsize=(10, 3.6))
+    for ax, key, label in [(axes[0], "loss", "Loss"), (axes[1], "accuracy", "Accuracy")]:
+        ax.plot(epochs, history[key], color=SERIES[0], label="Train", marker="o", markersize=4)
+        if f"val_{key}" in history:
+            ax.plot(epochs, history[f"val_{key}"], color=SERIES[1], label="Validation", marker="o", markersize=4)
+        if fine_tune_start:
+            ax.axvline(fine_tune_start - 0.5, color=TEXT_2, linestyle=":", linewidth=1.2)
+            ax.text(fine_tune_start - 0.4, ax.get_ylim()[1], " fine-tuning", va="top", fontsize=8, color=TEXT_2)
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel(label)
+        ax.set_xticks(epochs)
+        ax.set_title(f"{name}: {label.lower()}")
+    axes[1].legend()
+    fig.tight_layout()
+    save(fig, path)
+
+
+def comparison_table(rows: list, csv_path, md_path, title):
+    df = pd.DataFrame(rows)
+    df.to_csv(csv_path, index=False)
+    fmt = df.copy()
+    for col in fmt.columns:
+        if fmt[col].dtype.kind == "f":
+            fmt[col] = fmt[col].map(lambda v: f"{v:.4f}")
+    with open(md_path, "w", encoding="utf-8") as f:
+        f.write(f"# {title}\n\n")
+        f.write(fmt.to_markdown(index=False) + "\n")
+    return df

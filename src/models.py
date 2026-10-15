@@ -1,94 +1,69 @@
+"""Model definitions. Every model takes 224x224x3 float RGB in [0, 255] and normalizes internally."""
 import tensorflow as tf
-from src.dataset import get_augmentation_layer
+
+from src.config import IMAGE_SIZE
+from src.data.loaders import get_augmentation
+
+L = tf.keras.layers
+INPUT_SHAPE = (*IMAGE_SIZE, 3)
 
 
-def _prediction_head(feat, num_classes: int):
-    feat = tf.keras.layers.GlobalAveragePooling2D(name="gap")(feat)
-    feat = tf.keras.layers.Dense(128, activation="relu", name="fc1")(feat)
-    feat = tf.keras.layers.Dropout(0.4, name="dropout")(feat)
+def _head(x, num_classes: int):
+    x = L.GlobalAveragePooling2D(name="gap")(x)
+    x = L.Dense(128, activation="relu", name="fc1")(x)
+    x = L.Dropout(0.4, name="dropout")(x)
     if num_classes <= 2:
-        return tf.keras.layers.Dense(1, activation="sigmoid", name="predictions")(feat)
-    return tf.keras.layers.Dense(num_classes, activation="softmax", name="predictions")(feat)
+        return L.Dense(1, activation="sigmoid", name="predictions")(x)
+    return L.Dense(num_classes, activation="softmax", name="predictions")(x)
 
 
-def compile_model(model, num_classes: int, learning_rate: float = 1e-3):
-    loss = "binary_crossentropy" if num_classes <= 2 else "categorical_crossentropy"
-    metrics = ["accuracy"]
-    if num_classes <= 2:
-        metrics.append(tf.keras.metrics.AUC(name="auc"))
+def build_baseline_cnn(num_classes: int = 2) -> tf.keras.Model:
+    """Four conv blocks (Conv -> BatchNorm -> ReLU -> MaxPool), 32 to 256 filters."""
+    inputs = tf.keras.Input(shape=INPUT_SHAPE, name="input_image")
+    x = get_augmentation()(inputs)
+    x = L.Rescaling(1.0 / 255.0, name="rescale")(x)
+    for i, filters in enumerate([32, 64, 128, 256], start=1):
+        x = L.Conv2D(filters, 3, padding="same", use_bias=False, name=f"block{i}_conv")(x)
+        x = L.BatchNormalization(name=f"block{i}_bn")(x)
+        x = L.Activation("relu", name=f"block{i}_out")(x)
+        x = L.MaxPooling2D(2, name=f"block{i}_pool")(x)
+    return tf.keras.Model(inputs, _head(x, num_classes), name="Baseline_CNN")
+
+
+def build_transfer_model(backbone: str = "resnet50", num_classes: int = 2):
+    """ImageNet backbone (frozen) + new head. Returns (model, backbone_model)."""
+    inputs = tf.keras.Input(shape=INPUT_SHAPE, name="input_image")
+    x = get_augmentation()(inputs)
+    if backbone == "mobilenet_v2":
+        x = tf.keras.applications.mobilenet_v2.preprocess_input(x)
+        base = tf.keras.applications.MobileNetV2(weights="imagenet", include_top=False, input_tensor=x)
+        name = "MobileNetV2_transfer"
+    elif backbone == "resnet50":
+        x = tf.keras.applications.resnet50.preprocess_input(x)
+        base = tf.keras.applications.ResNet50(weights="imagenet", include_top=False, input_tensor=x)
+        name = "ResNet50_transfer"
+    else:
+        raise ValueError(f"Unknown backbone: {backbone}")
+    base.trainable = False
+    return tf.keras.Model(inputs, _head(base.output, num_classes), name=name), base
+
+
+def unfreeze_top(base: tf.keras.Model, n_layers: int = 20) -> None:
+    """Make the last n backbone layers trainable. BatchNorm stays frozen (inference mode),
+    because re-estimating ImageNet statistics from small batches tends to hurt fine-tuning."""
+    base.trainable = True
+    for layer in base.layers[:-n_layers]:
+        layer.trainable = False
+    for layer in base.layers:
+        if isinstance(layer, L.BatchNormalization):
+            layer.trainable = False
+
+
+def compile_model(model: tf.keras.Model, num_classes: int, learning_rate: float) -> tf.keras.Model:
+    binary = num_classes <= 2
     model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
-        loss=loss,
-        metrics=metrics,
+        loss="binary_crossentropy" if binary else "categorical_crossentropy",
+        metrics=["accuracy", tf.keras.metrics.AUC(name="auc", multi_label=False)],
     )
     return model
-
-
-def build_baseline_cnn(input_shape=(224, 224, 3), include_augmentation=True, num_classes=2):
-    """Custom baseline CNN with 4 convolutional blocks."""
-    inputs = tf.keras.Input(shape=input_shape, name="input_image")
-
-    x = inputs
-    if include_augmentation:
-        x = get_augmentation_layer()(x)
-
-    x = tf.keras.layers.Rescaling(1.0 / 255.0, name="rescaling")(x)
-
-    x = tf.keras.layers.Conv2D(32, (3, 3), padding="same", activation="relu", name="conv1")(x)
-    x = tf.keras.layers.BatchNormalization(name="bn1")(x)
-    x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), name="pool1")(x)
-
-    x = tf.keras.layers.Conv2D(64, (3, 3), padding="same", activation="relu", name="conv2")(x)
-    x = tf.keras.layers.BatchNormalization(name="bn2")(x)
-    x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), name="pool2")(x)
-
-    x = tf.keras.layers.Conv2D(128, (3, 3), padding="same", activation="relu", name="conv3")(x)
-    x = tf.keras.layers.BatchNormalization(name="bn3")(x)
-    x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), name="pool3")(x)
-
-    x = tf.keras.layers.Conv2D(256, (3, 3), padding="same", activation="relu", name="conv4_out")(x)
-    x = tf.keras.layers.BatchNormalization(name="bn4")(x)
-    x = tf.keras.layers.MaxPooling2D(pool_size=(2, 2), name="pool4")(x)
-
-    outputs = _prediction_head(x, num_classes)
-    model = tf.keras.Model(inputs=inputs, outputs=outputs, name="Baseline_CNN")
-    return model
-
-
-def build_transfer_model(
-    model_name="resnet50",
-    input_shape=(224, 224, 3),
-    include_augmentation=True,
-    num_classes=2,
-):
-    """
-    Transfer learning with ImageNet weights.
-    Default backbone is ResNet50 as required by the internship spec.
-    MobileNetV2 remains available as a lighter CPU option.
-    """
-    inputs = tf.keras.Input(shape=input_shape, name="input_image")
-
-    x = inputs
-    if include_augmentation:
-        x = get_augmentation_layer()(x)
-
-    name = model_name.lower()
-    if name == "mobilenet_v2":
-        x = tf.keras.applications.mobilenet_v2.preprocess_input(x)
-        base_model = tf.keras.applications.MobileNetV2(
-            weights="imagenet",
-            include_top=False,
-            input_tensor=x,
-        )
-    else:
-        x = tf.keras.applications.resnet50.preprocess_input(x)
-        base_model = tf.keras.applications.ResNet50(
-            weights="imagenet",
-            include_top=False,
-            input_tensor=x,
-        )
-
-    base_model.trainable = False
-    outputs = _prediction_head(base_model.output, num_classes)
-    model = tf.keras.Model(inputs=inputs, outputs=outputs, name=f"Transfer_{model_name}")
-    return model, base_model

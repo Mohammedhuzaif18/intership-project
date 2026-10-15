@@ -1,0 +1,60 @@
+2026-10-15 14:39:53,385 [INFO] Fixed random seed set to: 42
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 14:39:53,385 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 14:39:53,385 [INFO] No GPU detected. Running on CPU.
+2026-10-15 14:39:53,385 [INFO] Task=binary device=CPU backbone=resnet50 quick=False
+2026-10-15 14:39:53,421 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-15 14:39:53,425 [INFO] Verification passed: no 'patient_id' appears in more than one split.
+2026-10-15 14:39:53,425 [INFO] Classes: ['NORMAL', 'PNEUMONIA']; train/val/test = 4658/583/583
+2026-10-15 14:39:53,576 [INFO] Class weights: {'NORMAL': 1.844, 'PNEUMONIA': 0.686}
+2026-10-15 14:39:53,576 [INFO] ===== Training Baseline CNN =====
+2026-10-15 14:39:53,678 [INFO] Baseline CNN: 422,881 parameters
+Epoch 1/8
+146/146 - 195s - 1s/step - accuracy: 0.8143 - auc: 0.8977 - loss: 0.4026 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 2.2160 - learning_rate: 0.0010
+Epoch 2/8
+Epoch 2: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+146/146 - 188s - 1s/step - accuracy: 0.8602 - auc: 0.9328 - loss: 0.3280 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 2.2985 - learning_rate: 0.0010
+Epoch 3/8
+146/146 - 272s - 2s/step - accuracy: 0.8980 - auc: 0.9608 - loss: 0.2526 - val_accuracy: 0.7290 - val_auc: 0.5253 - val_loss: 1.8828 - learning_rate: 3.0000e-04
+Epoch 4/8
+146/146 - 316s - 2s/step - accuracy: 0.8954 - auc: 0.9620 - loss: 0.2479 - val_accuracy: 0.8250 - val_auc: 0.9644 - val_loss: 0.4442 - learning_rate: 3.0000e-04
+Epoch 5/8
+146/146 - 282s - 2s/step - accuracy: 0.9047 - auc: 0.9676 - loss: 0.2297 - val_accuracy: 0.9194 - val_auc: 0.9746 - val_loss: 0.1884 - learning_rate: 3.0000e-04
+Epoch 6/8
+Epoch 6: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
+146/146 - 237s - 2s/step - accuracy: 0.9066 - auc: 0.9677 - loss: 0.2286 - val_accuracy: 0.9228 - val_auc: 0.9768 - val_loss: 0.1928 - learning_rate: 3.0000e-04
+Epoch 7/8
+Epoch 7: ReduceLROnPlateau reducing learning rate to 2.700000040931627e-05.
+146/146 - 203s - 1s/step - accuracy: 0.9210 - auc: 0.9747 - loss: 0.2029 - val_accuracy: 0.7479 - val_auc: 0.9802 - val_loss: 0.6454 - learning_rate: 9.0000e-05
+Epoch 8/8
+Epoch 8: ReduceLROnPlateau reducing learning rate to 8.100000013655517e-06.
+146/146 - 205s - 1s/step - accuracy: 0.9182 - auc: 0.9753 - loss: 0.2003 - val_accuracy: 0.8799 - val_auc: 0.9819 - val_loss: 0.2680 - learning_rate: 2.7000e-05
+Epoch 8: early stopping
+Restoring model weights from the end of the best epoch: 5.
+2026-10-15 15:11:42,131 [INFO] Baseline CNN: val F1=0.9463 | test acc=0.9417 F1=0.9611 AUC=0.9862
+2026-10-15 15:11:42,269 [INFO] ===== Training ResNet50 =====
+2026-10-15 15:11:43,804 [INFO] resnet50: phase 1, frozen backbone, 5 epochs at lr 1e-3
+Epoch 1/5
+146/146 - 269s - 2s/step - accuracy: 0.8708 - auc: 0.9413 - loss: 0.3112 - val_accuracy: 0.9400 - val_auc: 0.9765 - val_loss: 0.1715 - learning_rate: 0.0010
+Epoch 2/5
+Epoch 2: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+146/146 - 219s - 2s/step - accuracy: 0.9231 - auc: 0.9734 - loss: 0.2070 - val_accuracy: 0.9383 - val_auc: 0.9753 - val_loss: 0.1751 - learning_rate: 0.0010
+Epoch 3/5
+Epoch 3: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
+146/146 - 216s - 1s/step - accuracy: 0.9287 - auc: 0.9808 - loss: 0.1777 - val_accuracy: 0.9348 - val_auc: 0.9771 - val_loss: 0.1816 - learning_rate: 3.0000e-04
+Epoch 4/5
+Epoch 4: ReduceLROnPlateau reducing learning rate to 2.700000040931627e-05.
+146/146 - 359s - 2s/step - accuracy: 0.9330 - auc: 0.9814 - loss: 0.1743 - val_accuracy: 0.9434 - val_auc: 0.9778 - val_loss: 0.1721 - learning_rate: 9.0000e-05
+Epoch 4: early stopping
+Restoring model weights from the end of the best epoch: 1.
+2026-10-15 15:29:26,680 [INFO] resnet50: phase 2, fine-tune last 20 layers, 3 epochs at lr 1e-5
+Epoch 1/3
+146/146 - 335s - 2s/step - accuracy: 0.9281 - auc: 0.9775 - loss: 0.1886 - val_accuracy: 0.9451 - val_auc: 0.9786 - val_loss: 0.1652 - learning_rate: 1.0000e-05
+Epoch 2/3
+146/146 - 235s - 2s/step - accuracy: 0.9350 - auc: 0.9826 - loss: 0.1654 - val_accuracy: 0.9434 - val_auc: 0.9806 - val_loss: 0.1581 - learning_rate: 1.0000e-05
+Epoch 3/3
+146/146 - 247s - 2s/step - accuracy: 0.9489 - auc: 0.9860 - loss: 0.1451 - val_accuracy: 0.9451 - val_auc: 0.9807 - val_loss: 0.1510 - learning_rate: 1.0000e-05
+Restoring model weights from the end of the best epoch: 3.
+2026-10-15 15:43:54,323 [INFO] ResNet50: val F1=0.9621 | test acc=0.9571 F1=0.9706 AUC=0.9932
+2026-10-15 15:43:55,139 [INFO] Selected ResNet50 (highest validation F1 = 0.9621)
+2026-10-15 15:43:55,290 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\models\best_model.keras and C:\Users\mohdh\OneDrive\Desktop\intership\models\class_names.json

@@ -1,0 +1,32 @@
+2026-10-15 14:35:11,082 [INFO] Kermany zip: C:\Users\mohdh\.cache\huggingface\hub\datasets--AiresPucrs--chest-xray\snapshots\a7105bddb445ae00c307c09b6c8f1430c6e9c497\chest_xray.zip
+2026-10-15 14:35:11,082 [INFO] Kermany already extracted.
+2026-10-15 14:35:11,082 [INFO] chest_xray/
+2026-10-15 14:35:11,082 [INFO]     test/
+2026-10-15 14:35:11,082 [INFO]         NORMAL/  (234 images)
+2026-10-15 14:35:11,098 [INFO]         PNEUMONIA/  (390 images)
+2026-10-15 14:35:11,098 [INFO]     train/
+2026-10-15 14:35:11,104 [INFO]         NORMAL/  (1341 images)
+2026-10-15 14:35:11,140 [INFO]         PNEUMONIA/  (3875 images)
+2026-10-15 14:35:11,140 [INFO]     val/
+2026-10-15 14:35:11,142 [INFO]         NORMAL/  (8 images)
+2026-10-15 14:35:11,145 [INFO]         PNEUMONIA/  (8 images)
+2026-10-15 14:35:11,145 [INFO] Images per class: {'NORMAL': 1583, 'PNEUMONIA': 4273}  total=5856
+2026-10-15 14:35:21,851 [INFO] Collected 5856 images from ['test', 'train', 'val'] (merged): {'PNEUMONIA': 4273, 'NORMAL': 1583}
+2026-10-15 14:35:21,851 [INFO] Scanning 5856 files (decode check + SHA-256) ...
+2026-10-15 14:35:33,196 [INFO] Quality check: {'images_found': 5856, 'corrupt_removed': 0, 'exact_duplicates_removed': 32, 'conflicting_duplicates_removed': 0, 'images_kept': 5824, 'image_modes': {'L': 5541, 'RGB': 283}}
+2026-10-15 14:35:33,228 [INFO] Subtypes: {('NORMAL', 'normal'): 1579, ('PNEUMONIA', 'bacteria'): 2760, ('PNEUMONIA', 'virus'): 1485}
+2026-10-15 14:35:33,242 [INFO] Patient grouping: 3117 patients for 5824 images; 0 filenames without a parseable patient id (each treated as its own patient)
+2026-10-15 14:35:36,248 [INFO] Verification passed: no 'group' appears in more than one split.
+2026-10-15 14:35:36,253 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-15 14:35:44,913 [INFO] Preprocessing 5824 images (CLAHE clip=2.0, tiles=(8, 8), size=(224, 224)) with 8 threads ...
+2026-10-15 14:36:03,736 [INFO] Preprocessing finished.
+2026-10-15 14:36:03,771 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\binary\train.csv (4658 rows)
+2026-10-15 14:36:03,779 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\binary\val.csv (583 rows)
+2026-10-15 14:36:03,790 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\binary\test.csv (583 rows)
+2026-10-15 14:36:03,849 [INFO] Class counts per split:
+       NORMAL  PNEUMONIA  total  patients  bacteria  normal  virus
+split                                                             
+train    1263       3395   4658      2490      2208    1263   1187
+val       158        425    583       313       276     158    149
+test      158        425    583       314       276     158    149
+2026-10-15 14:36:29,154 [INFO] Data preparation complete.
