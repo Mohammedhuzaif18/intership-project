@@ -1,0 +1,87 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792086631.247600   24500 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792086642.142717   24500 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-15 23:20:52,218 [INFO] Fixed random seed set to: 42
+2026-10-15 23:21:11,411 [INFO] Lung segmentation pairs:
+split           held_out  images
+ Test                       6086
+ Test cross_dataset_test     468
+ Test  kermany_test_copy     111
+ Test   kermany_val_copy     123
+Train                      19488
+Train cross_dataset_test    1538
+Train  kermany_test_copy     357
+Train   kermany_val_copy     332
+  Val                       4904
+  Val cross_dataset_test     394
+  Val  kermany_test_copy      49
+  Val   kermany_val_copy      70
+2026-10-15 23:21:11,411 [INFO] Training on 19488 Train images, selecting on 4904 Val images; 5 epochs x 400 steps x batch 16
+I0000 00:00:1792086671.425591   24500 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 23:21:12,230 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 23:21:12,241 [INFO] U-Net parameters: 487,881
+C:\Users\mohdh\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/5
+2026-10-15 23:22:46,847 [INFO]   step 100: loss 0.8242, Dice 0.8319
+2026-10-15 23:23:59,076 [INFO]   step 200: loss 0.6611, Dice 0.8732
+2026-10-15 23:25:25,037 [INFO]   step 300: loss 0.5457, Dice 0.8942
+2026-10-15 23:26:45,316 [INFO]   step 400: loss 0.4654, Dice 0.9057
+
+Epoch 1: val_hard_dice improved from None to 0.89670, saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+
+Epoch 1: finished saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+400/400 - 392s - 981ms/step - hard_dice: 0.9057 - loss: 0.4654 - val_hard_dice: 0.8967 - val_loss: 0.2901 - learning_rate: 0.0010
+Epoch 2/5
+2026-10-15 23:29:01,761 [INFO]   step 100: loss 0.1739, Dice 0.9470
+2026-10-15 23:30:18,708 [INFO]   step 200: loss 0.1568, Dice 0.9506
+2026-10-15 23:33:18,082 [INFO]   step 300: loss 0.1458, Dice 0.9524
+2026-10-15 23:34:32,027 [INFO]   step 400: loss 0.1393, Dice 0.9532
+
+Epoch 2: val_hard_dice improved from 0.89670 to 0.95568, saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+
+Epoch 2: finished saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+400/400 - 527s - 1s/step - hard_dice: 0.9532 - loss: 0.1393 - val_hard_dice: 0.9557 - val_loss: 0.1163 - learning_rate: 0.0010
+Epoch 3/5
+2026-10-15 23:39:18,488 [INFO]   step 100: loss 0.1077, Dice 0.9588
+2026-10-15 23:41:05,047 [INFO]   step 200: loss 0.1036, Dice 0.9600
+2026-10-15 23:42:21,640 [INFO]   step 300: loss 0.1012, Dice 0.9606
+2026-10-15 23:43:37,378 [INFO]   step 400: loss 0.1000, Dice 0.9607
+
+Epoch 3: val_hard_dice improved from 0.95568 to 0.96423, saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+
+Epoch 3: finished saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+400/400 - 483s - 1s/step - hard_dice: 0.9607 - loss: 0.1000 - val_hard_dice: 0.9642 - val_loss: 0.0913 - learning_rate: 0.0010
+Epoch 4/5
+2026-10-15 23:45:48,969 [INFO]   step 100: loss 0.0938, Dice 0.9618
+2026-10-15 23:47:01,822 [INFO]   step 200: loss 0.0905, Dice 0.9631
+2026-10-15 23:48:14,997 [INFO]   step 300: loss 0.0887, Dice 0.9636
+2026-10-15 23:49:33,802 [INFO]   step 400: loss 0.0884, Dice 0.9635
+
+Epoch 4: val_hard_dice did not improve from 0.96423
+
+Epoch 4: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+400/400 - 380s - 949ms/step - hard_dice: 0.9635 - loss: 0.0884 - val_hard_dice: 0.9424 - val_loss: 0.1464 - learning_rate: 0.0010
+Epoch 5/5
+2026-10-15 23:52:33,465 [INFO]   step 100: loss 0.0849, Dice 0.9648
+2026-10-15 23:53:53,283 [INFO]   step 200: loss 0.0809, Dice 0.9665
+2026-10-15 23:55:13,072 [INFO]   step 300: loss 0.0795, Dice 0.9669
+2026-10-15 23:56:31,696 [INFO]   step 400: loss 0.0790, Dice 0.9672
+
+Epoch 5: val_hard_dice improved from 0.96423 to 0.97073, saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+
+Epoch 5: finished saving model to C:\Users\mohdh\OneDrive\Desktop\intership\models\lung_segmenter\lung_unet.keras
+400/400 - 408s - 1s/step - hard_dice: 0.9672 - loss: 0.0790 - val_hard_dice: 0.9707 - val_loss: 0.0730 - learning_rate: 3.0000e-04
+2026-10-15 23:57:47,729 [INFO] Scoring 9528 images (Test folder + held-out images in Train/Val) ...
+2026-10-16 00:03:34,223 [INFO] Dice:
+                                                 Images    n  Dice (mean)  Dice (median)  Dice after cleaning  Dice < 0.80  Lung bounding-box IoU  Empty predictions
+                                       Test folder, all 6788     0.969494       0.977575             0.969712           20               0.962234                  0
+                                  Test folder, COVID-19 2395     0.971090       0.978894             0.971317           11               0.966400                  0
+                                 Test folder, Non-COVID 2253     0.955701       0.963199             0.956033            9               0.945597                  0
+                                    Test folder, Normal 2140     0.982230       0.985232             0.982316            0               0.975085                  0
+Held out from training: cross dataset test (any folder) 2400     0.971841       0.981215             0.972036            4               0.960633                  0
+ Held out from training: kermany test copy (any folder)  517     0.955773       0.963483             0.956117            2               0.960542                  0
+  Held out from training: kermany val copy (any folder)  525     0.955039       0.965272             0.955398            2               0.957572                  0

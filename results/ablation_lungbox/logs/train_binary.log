@@ -1,0 +1,56 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792090304.366757   25432 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792090306.537753   25432 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-16 00:21:48,559 [INFO] Fixed random seed set to: 42
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-16 00:21:48,559 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-16 00:21:48,560 [INFO] No GPU detected. Running on CPU.
+2026-10-16 00:21:48,560 [INFO] Task=binary device=CPU backbone=resnet50 preprocessing=lungbox quick=False
+2026-10-16 00:21:48,596 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-16 00:21:48,599 [INFO] Verification passed: no 'patient_id' appears in more than one split.
+2026-10-16 00:21:48,599 [INFO] Classes: ['NORMAL', 'PNEUMONIA']; train/val/test = 4658/583/583
+I0000 00:00:1792090308.643839   25432 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-16 00:21:48,769 [INFO] Class weights: {'NORMAL': 1.844, 'PNEUMONIA': 0.686}
+2026-10-16 00:21:48,769 [INFO] ===== Training Baseline CNN =====
+2026-10-16 00:21:48,852 [INFO] Baseline CNN: 422,881 parameters
+C:\Users\mohdh\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/8
+146/146 - 183s - 1s/step - accuracy: 0.7900 - auc: 0.8759 - loss: 0.4377 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 3.3355 - learning_rate: 0.0010
+Epoch 2/8
+
+Epoch 2: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+146/146 - 191s - 1s/step - accuracy: 0.8283 - auc: 0.9087 - loss: 0.3721 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 3.7633 - learning_rate: 0.0010
+Epoch 3/8
+146/146 - 192s - 1s/step - accuracy: 0.8581 - auc: 0.9334 - loss: 0.3201 - val_accuracy: 0.7290 - val_auc: 0.5052 - val_loss: 1.9153 - learning_rate: 3.0000e-04
+Epoch 4/8
+146/146 - 280s - 2s/step - accuracy: 0.8611 - auc: 0.9344 - loss: 0.3171 - val_accuracy: 0.8388 - val_auc: 0.9304 - val_loss: 0.3765 - learning_rate: 3.0000e-04
+Epoch 5/8
+
+Epoch 5: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
+146/146 - 199s - 1s/step - accuracy: 0.8682 - auc: 0.9404 - loss: 0.3026 - val_accuracy: 0.7822 - val_auc: 0.9478 - val_loss: 0.4718 - learning_rate: 3.0000e-04
+Epoch 6/8
+146/146 - 195s - 1s/step - accuracy: 0.8800 - auc: 0.9469 - loss: 0.2867 - val_accuracy: 0.8834 - val_auc: 0.9520 - val_loss: 0.2630 - learning_rate: 9.0000e-05
+Epoch 7/8
+
+Epoch 7: ReduceLROnPlateau reducing learning rate to 2.700000040931627e-05.
+146/146 - 196s - 1s/step - accuracy: 0.8875 - auc: 0.9537 - loss: 0.2701 - val_accuracy: 0.7341 - val_auc: 0.9460 - val_loss: 0.6845 - learning_rate: 9.0000e-05
+Epoch 8/8
+146/146 - 194s - 1s/step - accuracy: 0.8866 - auc: 0.9556 - loss: 0.2678 - val_accuracy: 0.8954 - val_auc: 0.9564 - val_loss: 0.2596 - learning_rate: 2.7000e-05
+Restoring model weights from the end of the best epoch: 8.
+2026-10-16 00:49:08,993 [INFO] Baseline CNN: val F1=0.9253 | test acc=0.9142 F1=0.9384 AUC=0.9632
+2026-10-16 00:49:09,128 [INFO] ===== Training ResNet50 =====
+2026-10-16 00:49:10,812 [INFO] resnet50: phase 1, frozen backbone, 5 epochs at lr 1e-3
+C:\Users\mohdh\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/5
+146/146 - 212s - 1s/step - accuracy: 0.8267 - auc: 0.9047 - loss: 0.3967 - val_accuracy: 0.8868 - val_auc: 0.9609 - val_loss: 0.2993 - learning_rate: 0.0010
+Epoch 2/5
+146/146 - 240s - 2s/step - accuracy: 0.8824 - auc: 0.9518 - loss: 0.2774 - val_accuracy: 0.9245 - val_auc: 0.9682 - val_loss: 0.2096 - learning_rate: 0.0010
+Epoch 3/5
+
+Epoch 3: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+146/146 - 191s - 1s/step - accuracy: 0.8924 - auc: 0.9597 - loss: 0.2554 - val_accuracy: 0.9262 - val_auc: 0.9704 - val_loss: 0.2305 - learning_rate: 0.0010
+Epoch 4/5

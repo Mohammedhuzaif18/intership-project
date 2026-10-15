@@ -183,7 +183,8 @@ def plot_preprocessing_examples(df: pd.DataFrame, classes, path, per_class: int 
     """Raw -> resized -> resized + CLAHE for a few images per class."""
     rows = pd.concat([df[df["label"] == c].sample(per_class, random_state=seed) for c in classes])
     fig, axes = plt.subplots(len(rows), 3, figsize=(7.2, 2.5 * len(rows)))
-    fit = "Grayscale, 224x224" if PREPROCESS_VARIANT == "squash" else "Centre square, 224x224"
+    fit = {"squash": "Grayscale, 224x224", "crop": "Centre square, 224x224",
+           "lungbox": "Lung box, 224x224"}[PREPROCESS_VARIANT]
     titles = ["Raw (native size)", fit, "+ CLAHE (model input)"]
     for r, (_, row) in enumerate(rows.iterrows()):
         img = load_image(absolute(row["path"]))

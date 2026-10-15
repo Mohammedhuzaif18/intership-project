@@ -213,7 +213,9 @@ def run(task: str, backbone: str):
         "target_layer": find_target_layer(best["model"]),
         "threshold": 0.5 if num_classes == 2 else None,
         "preprocessing": {"variant": PREPROCESS_VARIANT,
-                          "steps": ["grayscale"] + (["centre-crop to square"] if PREPROCESS_VARIANT == "crop" else [])
+                          "steps": ["grayscale"] + {"crop": ["centre-crop to square"],
+                                                    "lungbox": ["crop to U-Net lung bounding box + margin, "
+                                                                "padded to a square"]}.get(PREPROCESS_VARIANT, [])
                           + [f"resize {IMAGE_SIZE[0]}x{IMAGE_SIZE[1]} (INTER_AREA)", "CLAHE", "3-channel RGB"],
                           "clahe_clip_limit": CLAHE_CLIP_LIMIT, "clahe_tile_grid": list(CLAHE_TILE_GRID)},
         "selection": "highest validation F1" + (" (macro)" if num_classes > 2 else ""),

@@ -1,0 +1,42 @@
+2026-10-16 00:04:26,392 [INFO] HTTP Request: HEAD https://huggingface.co/datasets/AiresPucrs/chest-xray/resolve/main/chest_xray.zip "HTTP/1.1 302 Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-16 00:04:26,395 [WARNING] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-16 00:04:26,399 [INFO] Kermany zip: C:\Users\mohdh\.cache\huggingface\hub\datasets--AiresPucrs--chest-xray\snapshots\a7105bddb445ae00c307c09b6c8f1430c6e9c497\chest_xray.zip
+2026-10-16 00:04:26,400 [INFO] Kermany already extracted.
+2026-10-16 00:04:26,401 [INFO] chest_xray/
+2026-10-16 00:04:26,403 [INFO]     test/
+2026-10-16 00:04:26,422 [INFO]         NORMAL/  (234 images)
+2026-10-16 00:04:26,446 [INFO]         PNEUMONIA/  (390 images)
+2026-10-16 00:04:26,447 [INFO]     train/
+2026-10-16 00:04:26,602 [INFO]         NORMAL/  (1341 images)
+2026-10-16 00:04:26,803 [INFO]         PNEUMONIA/  (3875 images)
+2026-10-16 00:04:26,804 [INFO]     val/
+2026-10-16 00:04:26,805 [INFO]         NORMAL/  (8 images)
+2026-10-16 00:04:26,806 [INFO]         PNEUMONIA/  (8 images)
+2026-10-16 00:04:26,806 [INFO] Images per class: {'NORMAL': 1583, 'PNEUMONIA': 4273}  total=5856
+2026-10-16 00:04:38,830 [INFO] Collected 5856 images from ['test', 'train', 'val'] (merged): {'PNEUMONIA': 4273, 'NORMAL': 1583}
+2026-10-16 00:04:38,830 [INFO] Scanning 5856 files (decode check + SHA-256) ...
+2026-10-16 00:04:57,841 [INFO] Quality check: {'images_found': 5856, 'corrupt_removed': 0, 'exact_duplicates_removed': 32, 'conflicting_duplicates_removed': 0, 'images_kept': 5824, 'image_modes': {'L': 5541, 'RGB': 283}}
+2026-10-16 00:04:57,853 [INFO] Subtypes: {('NORMAL', 'normal'): 1579, ('PNEUMONIA', 'bacteria'): 2760, ('PNEUMONIA', 'virus'): 1485}
+2026-10-16 00:04:57,855 [INFO] Patient grouping: 3117 patients for 5824 images; 0 filenames without a parseable patient id (each treated as its own patient)
+2026-10-16 00:05:02,901 [INFO] Verification passed: no 'group' appears in more than one split.
+2026-10-16 00:05:02,915 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-16 00:05:09,796 [INFO] Preprocessing 5824 images (variant=lungbox, CLAHE clip=2.0, tiles=(8, 8), size=(224, 224)) with 8 threads ...
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792089311.330990    2452 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792089323.205923    2452 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1792089329.325434   27472 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-16 00:05:31,077 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-16 00:19:57,355 [INFO] Preprocessing finished.
+2026-10-16 00:19:57,469 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\ablation_lungbox\binary\train.csv (4658 rows)
+2026-10-16 00:19:57,475 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\ablation_lungbox\binary\val.csv (583 rows)
+2026-10-16 00:19:57,482 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\ablation_lungbox\binary\test.csv (583 rows)
+2026-10-16 00:19:57,559 [INFO] Class counts per split:
+       NORMAL  PNEUMONIA  total  patients  bacteria  normal  virus
+split                                                             
+train    1263       3395   4658      2490      2208    1263   1187
+val       158        425    583       313       276     158    149
+test      158        425    583       314       276     158    149
+2026-10-16 00:21:32,448 [INFO] Data preparation complete.

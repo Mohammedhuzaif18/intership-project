@@ -5,11 +5,13 @@ from pathlib import Path
 # XRAY_ROOT redirects data/splits/results/models to another folder (used for isolated pipeline tests)
 ROOT = Path(os.environ.get("XRAY_ROOT") or Path(__file__).resolve().parent.parent).resolve()
 
-# Preprocessing ablation. XRAY_PREPROCESS=crop centre-crops every image to a square before resizing, so the
-# aspect ratio is no longer squashed. All reported results use the default "squash"; any other variant reads
-# the same raw data but writes its preprocessed images, splits, results and models to separate ablation_<variant>
-# folders, so an ablation run can never overwrite the default pipeline's outputs or the model the app serves.
-PREPROCESS_VARIANTS = ("squash", "crop")
+# Preprocessing ablations. XRAY_PREPROCESS=crop centre-crops every image to a square before resizing, so the
+# aspect ratio is no longer squashed. XRAY_PREPROCESS=lungbox cuts out the predicted lung bounding box (plus a
+# margin) and pads it to a square with black, so the lungs fill the same part of every input. All reported
+# results use the default "squash"; any other variant reads the same raw data but writes its preprocessed images,
+# splits, results and models to separate ablation_<variant> folders, so an ablation run can never overwrite the
+# default pipeline's outputs or the model the app serves.
+PREPROCESS_VARIANTS = ("squash", "crop", "lungbox")
 PREPROCESS_VARIANT = os.environ.get("XRAY_PREPROCESS", "squash")
 if PREPROCESS_VARIANT not in PREPROCESS_VARIANTS:
     raise ValueError(f"XRAY_PREPROCESS must be one of {PREPROCESS_VARIANTS}, got {PREPROCESS_VARIANT!r}")
@@ -32,6 +34,10 @@ MODELS_DIR = ROOT / "models" / _ABLATION
 
 CLASS_NAMES_PATH = MODELS_DIR / "class_names.json"
 BEST_MODEL_PATH = MODELS_DIR / "best_model.keras"
+
+# Lung-box variant: U-Net trained by src.lung_segmenter (shared by every variant's folders, so not under MODELS_DIR)
+LUNG_SEGMENTER_PATH = ROOT / "models" / "lung_segmenter" / "lung_unet.keras"
+LUNGBOX_MARGIN = 0.05  # added on each side of the lung box, as a fraction of the box's width / height
 
 SEED = 42
 IMAGE_SIZE = (224, 224)

@@ -5,6 +5,10 @@ grayscale -> fit to 224x224 -> CLAHE -> 3-channel RGB, uint8.
 The fit step depends on the variant (src.config.PREPROCESS_VARIANT):
   squash (default, all reported results): resize the whole image (INTER_AREA); the aspect ratio is not kept
   crop (ablation): take the central square, then resize (INTER_AREA); no aspect-ratio distortion
+  lungbox (ablation): a U-Net (src.lung_segmenter) finds the lungs; their bounding box plus a 5% margin is cut
+    out (black where it leaves the image), centred on a black square, then resized (INTER_AREA). Nothing outside
+    the box is kept, so the lungs fill the same part of every input. Falls back to the central square if no
+    lungs are found.
 Normalization to the model's input range happens inside each model
 (Rescaling(1/255) for the baseline, resnet50.preprocess_input for ResNet50),
 so every caller feeds the same uint8 RGB array.
@@ -16,7 +20,8 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from src.config import CLAHE_CLIP_LIMIT, CLAHE_TILE_GRID, IMAGE_SIZE, PREPROCESS_VARIANT, PREPROCESS_VARIANTS
+from src.config import (CLAHE_CLIP_LIMIT, CLAHE_TILE_GRID, IMAGE_SIZE, LUNGBOX_MARGIN, PREPROCESS_VARIANT,
+                        PREPROCESS_VARIANTS)
 from src.utils import logger
 
 
@@ -49,13 +54,66 @@ def center_square(width: int, height: int) -> tuple[int, int, int]:
     return (width - side) // 2, (height - side) // 2, side
 
 
-def fit_to_input(gray: np.ndarray, variant: str = PREPROCESS_VARIANT) -> np.ndarray:
-    """Geometric step: native-size grayscale -> 224x224 for the given preprocessing variant."""
+def lung_rect(box) -> tuple[int, int, int, int]:
+    """(x0, y0, x1, y1) of a lung box plus LUNGBOX_MARGIN of its width / height on each side (may leave the image)."""
+    x0, y0, x1, y1 = box
+    mx, my = LUNGBOX_MARGIN * (x1 - x0), LUNGBOX_MARGIN * (y1 - y0)
+    return round(x0 - mx), round(y0 - my), round(x1 + mx), round(y1 + my)
+
+
+def predicted_lung_rect(gray: np.ndarray):
+    """lung_rect of the U-Net's lung box, or None if no lungs were found."""
+    from src.lung_segmenter import lung_bbox  # loads TensorFlow; only the lungbox variant needs it
+
+    box = lung_bbox(gray)
+    return None if box is None else lung_rect(box)
+
+
+def input_rect(gray: np.ndarray, variant: str = PREPROCESS_VARIANT):
+    """(x0, y0, x1, y1) of the native-image region a variant fits to 224x224; None for squash (whole image)."""
+    h, w = gray.shape[:2]
+    left, top, side = center_square(w, h)
+    centre = (left, top, left + side, top + side)
+    if variant == "crop":
+        return centre
+    if variant == "lungbox":
+        return predicted_lung_rect(gray) or centre
+    return None
+
+
+def crop_rect(arr: np.ndarray, rect) -> np.ndarray:
+    """The (x0, y0, x1, y1) region of arr; parts outside arr are filled with 0 (black)."""
+    x0, y0, x1, y1 = rect
+    h, w = arr.shape[:2]
+    if x0 >= 0 and y0 >= 0 and x1 <= w and y1 <= h:
+        return arr[y0:y1, x0:x1]
+    out = np.zeros((y1 - y0, x1 - x0) + arr.shape[2:], dtype=arr.dtype)
+    sx0, sy0, sx1, sy1 = max(x0, 0), max(y0, 0), min(x1, w), min(y1, h)
+    if sx1 > sx0 and sy1 > sy0:
+        out[sy0 - y0:sy1 - y0, sx0 - x0:sx1 - x0] = arr[sy0:sy1, sx0:sx1]
+    return out
+
+
+def pad_to_square(arr: np.ndarray) -> np.ndarray:
+    """Centre arr on a black square whose side is its longer edge (no-op for a square)."""
+    h, w = arr.shape[:2]
+    if h == w:
+        return arr
+    side = max(h, w)
+    out = np.zeros((side, side) + arr.shape[2:], dtype=arr.dtype)
+    top, left = (side - h) // 2, (side - w) // 2
+    out[top:top + h, left:left + w] = arr
+    return out
+
+
+def fit_to_input(gray: np.ndarray, variant: str = PREPROCESS_VARIANT, rect=None) -> np.ndarray:
+    """Geometric step: native-size grayscale -> 224x224 for the given preprocessing variant.
+    rect: the (x0, y0, x1, y1) to use instead of input_rect(gray, variant), e.g. to map a lung mask
+    through the same crop as its X-ray."""
     if variant not in PREPROCESS_VARIANTS:
         raise ValueError(f"Unknown preprocessing variant {variant!r}")
-    if variant == "crop":
-        left, top, side = center_square(gray.shape[1], gray.shape[0])
-        gray = gray[top:top + side, left:left + side]
+    if variant != "squash":
+        gray = pad_to_square(crop_rect(gray, rect or input_rect(gray, variant)))
     return resize_gray(gray)
 
 

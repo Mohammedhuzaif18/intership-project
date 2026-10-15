@@ -1,0 +1,159 @@
+{
+  "model": "models/lung_segmenter/lung_unet.keras",
+  "parameters": 487881,
+  "filters": [
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "input": "256x256 grayscale / 255",
+  "training": {
+    "images": 19488,
+    "val_images": 4904,
+    "epochs": 5,
+    "steps_per_epoch": 400,
+    "batch": 16,
+    "loss": "BCE + soft Dice",
+    "optimizer": "Adam 1e-3",
+    "selection": "best validation Dice"
+  },
+  "threshold": 0.5,
+  "min_component_fraction": 0.1,
+  "min_lung_area": 0.01,
+  "pairs": [
+    {
+      "split": "Test",
+      "held_out": "",
+      "images": 6086
+    },
+    {
+      "split": "Test",
+      "held_out": "cross_dataset_test",
+      "images": 468
+    },
+    {
+      "split": "Test",
+      "held_out": "kermany_test_copy",
+      "images": 111
+    },
+    {
+      "split": "Test",
+      "held_out": "kermany_val_copy",
+      "images": 123
+    },
+    {
+      "split": "Train",
+      "held_out": "",
+      "images": 19488
+    },
+    {
+      "split": "Train",
+      "held_out": "cross_dataset_test",
+      "images": 1538
+    },
+    {
+      "split": "Train",
+      "held_out": "kermany_test_copy",
+      "images": 357
+    },
+    {
+      "split": "Train",
+      "held_out": "kermany_val_copy",
+      "images": 332
+    },
+    {
+      "split": "Val",
+      "held_out": "",
+      "images": 4904
+    },
+    {
+      "split": "Val",
+      "held_out": "cross_dataset_test",
+      "images": 394
+    },
+    {
+      "split": "Val",
+      "held_out": "kermany_test_copy",
+      "images": 49
+    },
+    {
+      "split": "Val",
+      "held_out": "kermany_val_copy",
+      "images": 70
+    }
+  ],
+  "dice": [
+    {
+      "Images": "Test folder, all",
+      "n": 6788,
+      "Dice (mean)": 0.9694942657634243,
+      "Dice (median)": 0.9775751536295442,
+      "Dice after cleaning": 0.9697117485334454,
+      "Dice < 0.80": 20,
+      "Lung bounding-box IoU": 0.9622336219334422,
+      "Empty predictions": 0
+    },
+    {
+      "Images": "Test folder, COVID-19",
+      "n": 2395,
+      "Dice (mean)": 0.9710900254252468,
+      "Dice (median)": 0.9788941736028538,
+      "Dice after cleaning": 0.971317227285577,
+      "Dice < 0.80": 11,
+      "Lung bounding-box IoU": 0.9663999431492377,
+      "Empty predictions": 0
+    },
+    {
+      "Images": "Test folder, Non-COVID",
+      "n": 2253,
+      "Dice (mean)": 0.955700834494067,
+      "Dice (median)": 0.9631994804632535,
+      "Dice after cleaning": 0.9560334726411109,
+      "Dice < 0.80": 9,
+      "Lung bounding-box IoU": 0.9455974305063658,
+      "Empty predictions": 0
+    },
+    {
+      "Images": "Test folder, Normal",
+      "n": 2140,
+      "Dice (mean)": 0.9822301331745444,
+      "Dice (median)": 0.985232203733266,
+      "Dice after cleaning": 0.9823155027269381,
+      "Dice < 0.80": 0,
+      "Lung bounding-box IoU": 0.9750854910798777,
+      "Empty predictions": 0
+    },
+    {
+      "Images": "Held out from training: cross dataset test (any folder)",
+      "n": 2400,
+      "Dice (mean)": 0.9718410584269441,
+      "Dice (median)": 0.981215395236169,
+      "Dice after cleaning": 0.9720360265733359,
+      "Dice < 0.80": 4,
+      "Lung bounding-box IoU": 0.9606325260199484,
+      "Empty predictions": 0
+    },
+    {
+      "Images": "Held out from training: kermany test copy (any folder)",
+      "n": 517,
+      "Dice (mean)": 0.9557727406988128,
+      "Dice (median)": 0.9634831460674157,
+      "Dice after cleaning": 0.9561172075383967,
+      "Dice < 0.80": 2,
+      "Lung bounding-box IoU": 0.9605420803587837,
+      "Empty predictions": 0
+    },
+    {
+      "Images": "Held out from training: kermany val copy (any folder)",
+      "n": 525,
+      "Dice (mean)": 0.9550385200779439,
+      "Dice (median)": 0.9652722967640095,
+      "Dice after cleaning": 0.955397769172644,
+      "Dice < 0.80": 2,
+      "Lung bounding-box IoU": 0.9575723959085859,
+      "Empty predictions": 0
+    }
+  ]
+}

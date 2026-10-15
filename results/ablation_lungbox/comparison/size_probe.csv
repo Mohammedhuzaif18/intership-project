@@ -1,0 +1,10 @@
+Probe features,n train,n test,test_roc_auc,test_balanced_accuracy
+Native width + height + aspect ratio (Review-I probe),4658,583,0.91198808637379,0.8390618019359642
+Crop side only (all the size left after centre-cropping),4658,583,0.9117200297840656,0.8390618019359642
+Lung-box size only (longer side in native pixels: the resolution left after lung-box cropping),4658,583,0.8839463886820551,0.783440059568131
+Black areas only (letterbox share + margin past each image edge),4658,583,0.7363737900223382,0.7212956068503351
+Everything the lungbox input shows about the geometry: lung-box size + black areas,4658,583,0.9185852568875652,0.8421444527177959
+Lung area + lung bounding box in the squash model input (no pixels),4130,517,0.9369273385893885,0.8611051921301229
+Lung area + lung bounding box in the crop model input (no pixels),4130,517,0.927338589388451,0.8505398110661269
+Lung area + lung bounding box in the lungbox model input (no pixels),4130,517,0.6655657362028553,0.6330172597485617
+Lungbox: lung framing + lung-box size + black areas (no pixels),4130,517,0.9226862703316997,0.850974856168762

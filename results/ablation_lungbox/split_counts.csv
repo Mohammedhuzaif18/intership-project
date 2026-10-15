@@ -1,0 +1,4 @@
+split,NORMAL,PNEUMONIA,total,patients,bacteria,normal,virus
+train,1263,3395,4658,2490,2208,1263,1187
+val,158,425,583,313,276,158,149
+test,158,425,583,314,276,158,149
