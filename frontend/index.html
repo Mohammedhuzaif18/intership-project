@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>PulmoScan · Chest X-ray Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v8"/>
+          <path d="M12 9c-1.5-1-3-1.4-4.5-1C5 8.5 4 12 4 15.5 4 18.5 5.5 20 7.5 20c2 0 3-1 3.5-2.5L12 11"/>
+          <path d="M12 9c1.5-1 3-1.4 4.5-1 2.5.5 3.5 4 3.5 7.5 0 3-1.5 4.5-3.5 4.5-2 0-3-1-3.5-2.5L12 11"/>
+        </svg>
+        <div>
+          <div class="brand-name">PulmoScan</div>
+          <div class="brand-sub">Interpretable chest X-ray classification</div>
+        </div>
+      </div>
+      <div class="status" id="status" data-state="checking" role="status" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="statusText">Connecting to model…</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="notice">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
+    </svg>
+    <p><strong>Research prototype.</strong> Not a certified medical device. Do not use for diagnosis or treatment decisions.</p>
+  </div>
+
+  <main class="layout">
+
+    <!-- Viewer -->
+    <section class="panel viewer" aria-labelledby="viewerTitle">
+      <div class="panel-head">
+        <h2 id="viewerTitle">Radiograph</h2>
+        <div class="toolbar" id="toolbar" hidden>
+          <div class="segmented" role="radiogroup" aria-label="View mode">
+            <button type="button" role="radio" data-mode="original" aria-checked="false">Original</button>
+            <button type="button" role="radio" data-mode="overlay" aria-checked="true">Overlay</button>
+            <button type="button" role="radio" data-mode="compare" aria-checked="false">Compare</button>
+          </div>
+          <button type="button" class="btn btn-ghost" id="replaceBtn">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            New image
+          </button>
+        </div>
+      </div>
+
+      <div class="dropzone" id="dropZone" tabindex="0" role="button" aria-label="Upload a chest X-ray">
+        <div class="dropzone-inner">
+          <div class="dropzone-icon">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          </div>
+          <p class="dropzone-title">Drop a chest X-ray here</p>
+          <p class="dropzone-hint">or <span class="link">browse files</span> · JPEG or PNG, frontal (PA/AP) view</p>
+        </div>
+        <input type="file" id="fileInput" accept="image/png,image/jpeg" hidden>
+      </div>
+
+      <div class="stage" id="stage" data-mode="overlay" hidden>
+        <figure class="pane" id="paneMain">
+          <div class="frame">
+            <img class="layer-base" id="imgBase" alt="Chest X-ray">
+            <img class="layer-heat" id="imgHeat" alt="" aria-hidden="true">
+            <div class="scan" aria-hidden="true"></div>
+          </div>
+          <figcaption id="captionMain">Original</figcaption>
+        </figure>
+        <figure class="pane pane-compare">
+          <div class="frame">
+            <img class="layer-base" id="imgBase2" alt="" aria-hidden="true">
+            <img class="layer-heat" id="imgHeat2" alt="Grad-CAM heatmap over the X-ray">
+          </div>
+          <figcaption>Grad-CAM overlay</figcaption>
+        </figure>
+      </div>
+
+      <div class="viewer-foot" id="viewerFoot" hidden>
+        <div class="opacity" id="opacityControl" hidden>
+          <label for="opacitySlider">Heatmap opacity</label>
+          <input type="range" id="opacitySlider" min="0" max="90" value="45" step="5">
+          <output id="opacityVal" for="opacitySlider">45%</output>
+        </div>
+        <div class="file-meta" id="fileMeta"></div>
+      </div>
+
+      <div class="samples" id="samples" hidden>
+        <span class="samples-label">Try a held-out test image</span>
+        <div class="samples-row" id="sampleButtons"></div>
+      </div>
+    </section>
+
+    <!-- Analysis -->
+    <section class="panel analysis" aria-labelledby="analysisTitle" aria-live="polite">
+      <div class="panel-head">
+        <h2 id="analysisTitle">Analysis</h2>
+      </div>
+
+      <div class="empty" id="emptyState">
+        <ol class="steps">
+          <li><span>1</span>Add a chest X-ray, or pick a test image.</li>
+          <li><span>2</span>The model classifies it and reports its confidence.</li>
+          <li><span>3</span>Grad-CAM shows which regions drove that decision.</li>
+        </ol>
+      </div>
+
+      <div class="loading" id="loadingState" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Running the model and computing Grad-CAM…</p>
+      </div>
+
+      <div class="error" id="errorState" role="alert" hidden>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+        <div>
+          <p class="error-title">Analysis failed</p>
+          <p class="error-msg" id="errorMsg"></p>
+        </div>
+      </div>
+
+      <div class="result" id="resultState" hidden>
+        <div class="verdict" id="verdict">
+          <div class="eyebrow">Prediction</div>
+          <div class="verdict-row">
+            <div class="verdict-class">
+              <span class="class-dot" id="verdictDot"></span>
+              <span id="predictedClass">—</span>
+            </div>
+            <div class="verdict-conf">
+              <span class="conf-value" id="confidenceValue">—</span>
+              <span class="conf-label">confidence</span>
+            </div>
+          </div>
+          <p class="verdict-note" id="verdictNote" hidden></p>
+          <p class="truth" id="truthNote" hidden></p>
+        </div>
+
+        <div class="block">
+          <h3>Class probabilities</h3>
+          <ul class="probs" id="probBars"></ul>
+        </div>
+
+        <div class="block">
+          <h3>Reading the heatmap</h3>
+          <div class="legend">
+            <div class="legend-bar"></div>
+            <div class="legend-labels"><span>Less influence</span><span>More influence</span></div>
+          </div>
+          <p class="muted">Warm regions are where the image most changed the model's score for the predicted class. They show what the model relied on, not confirmed pathology. Highlights outside the lungs suggest it may be using shortcuts.</p>
+        </div>
+
+        <details class="block details">
+          <summary>Technical details</summary>
+          <dl class="kv" id="techDetails"></dl>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Data and trained models (large, regenerable)
+data/
+models/
+*.keras
+*.h5
+
+# Credentials
+kaggle.json
+**/kaggle.json
+.kaggle/
+.env
+
+# Python / environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Old outputs from the pre-spec, image-level-split run (kept locally for reference)
+results/archive_*/
+
+# Local tool config
+.claude/
+.vscode/
