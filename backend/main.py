@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from src.config import BEST_MODEL_PATH, CLASS_NAMES_PATH, SPLITS_DIR  # noqa: E402
 from src.data.preprocessing import preprocess_image  # noqa: E402
+from src.gate import ChestGate  # noqa: E402
 from src.gradcam import GradCAM, colorize_heatmap, overlay_heatmap  # noqa: E402
 from src.utils import absolute, load_json  # noqa: E402
 
@@ -36,7 +37,7 @@ CLASS_NAMES_FILE = Path(os.environ.get("CLASS_NAMES_FILE", CLASS_NAMES_PATH))
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 DISCLAIMER = "Educational research prototype. Not a medical device; not for diagnosis or treatment decisions."
 
-state = {"model": None, "cam": None, "meta": None, "error": None}
+state = {"model": None, "cam": None, "meta": None, "gate": None, "error": None}
 
 
 def load_model():
@@ -48,9 +49,14 @@ def load_model():
         if outputs != expected:
             raise ValueError(f"Model has {outputs} outputs but class_names.json lists {meta['classes']}")
         state.update(model=model, cam=GradCAM(model, meta.get("target_layer")), meta=meta, error=None)
+        try:
+            state["gate"] = ChestGate.load(model, MODEL_PATH)
+        except Exception as e:
+            state["gate"] = None
+            print(f"Chest gate disabled: {type(e).__name__}: {e}")
         print(f"Loaded {meta['model']} ({meta['task']}) from {MODEL_PATH}; Grad-CAM layer {state['cam'].layer_name}")
     except Exception as e:
-        state.update(model=None, cam=None, meta=None, error=f"{type(e).__name__}: {e}")
+        state.update(model=None, cam=None, meta=None, gate=None, error=f"{type(e).__name__}: {e}")
         print(f"Model not loaded: {state['error']}")
 
 
@@ -99,6 +105,8 @@ def health():
         "target_layer": state["cam"].layer_name if state["cam"] else None,
         "test_metrics": meta.get("test_metrics"),
         "error": state["error"],
+        "chest_gate": {"enabled": state["gate"] is not None,
+                       "threshold": round(state["gate"].threshold, 4) if state["gate"] else None},
         "disclaimer": DISCLAIMER,
     }
 
@@ -123,6 +131,19 @@ async def predict(file: UploadFile = File(...)):
     classes = meta["classes"]
     # Identical to the training preprocessing; models trained before the crop ablation carry no variant (squash)
     model_input = preprocess_image(image, meta.get("preprocessing", {}).get("variant", "squash"))
+    gate = state["gate"]
+    is_chest, chest_score = gate.is_chest_xray(model_input) if gate else (True, None)
+    if not is_chest:
+        # Not a chest X-ray: no disease result, no probabilities, no Grad-CAM
+        return {
+            "success": True, "is_chest_xray": False, "chest_score": round(chest_score, 4),
+            "chest_threshold": round(gate.threshold, 4), "filename": file.filename,
+            "predicted_class": None, "predicted_label": None, "confidence": None, "class_probabilities": {},
+            "display_names": meta["display_names"], "gradcam_overlay_base64": None, "heatmap_base64": None,
+            "model_input_base64": _jpeg_data_url(model_input), "target_layer": state["cam"].layer_name,
+            "model": meta["model"], "task": meta["task"], "disclaimer": DISCLAIMER,
+            "message": "This image does not look like a chest X-ray, so no disease result is given.",
+        }
     try:
         probs, heat, idx = state["cam"](model_input)
     except Exception as e:
@@ -131,6 +152,8 @@ async def predict(file: UploadFile = File(...)):
     size = model_input.shape[1::-1]
     return {
         "success": True,
+        "is_chest_xray": True,
+        "chest_score": round(chest_score, 4) if chest_score is not None else None,
         "filename": file.filename,
         "predicted_class": classes[idx],
         "predicted_label": meta["display_names"].get(classes[idx], classes[idx]),

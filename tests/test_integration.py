@@ -13,9 +13,10 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import requests
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -51,6 +52,23 @@ def decode_data_url(url: str) -> Image.Image:
     return Image.open(io.BytesIO(base64.b64decode(url.split(",", 1)[1])))
 
 
+def drawn_portrait() -> bytes:
+    """A colour, photo-like portrait (face, hair, clothes): clearly not a chest X-ray."""
+    yy, xx = np.mgrid[0:600, 0:480]
+    img = np.stack([90 + xx * 120 // 480, 127 + yy * 80 // 600, np.full_like(xx, 168)], axis=-1).astype(np.uint8)
+    im = Image.fromarray(img)
+    d = ImageDraw.Draw(im)
+    d.ellipse([90, 50, 390, 390], fill=(43, 29, 20))
+    d.ellipse([115, 130, 365, 450], fill=(201, 154, 120))
+    d.ellipse([177, 251, 213, 269], fill=(27, 27, 27))
+    d.ellipse([267, 251, 303, 269], fill=(27, 27, 27))
+    d.arc([195, 305, 285, 395], 30, 150, fill=(122, 59, 46), width=6)
+    d.rectangle([70, 470, 410, 600], fill=(31, 42, 68))
+    buf = io.BytesIO()
+    im.save(buf, format="JPEG", quality=92)
+    return buf.getvalue()
+
+
 def main():
     meta = load_json(CLASS_NAMES_PATH)
     classes = meta["classes"]
@@ -80,6 +98,7 @@ def main():
             d = r.json()
             probs = d["class_probabilities"]
             assert d["success"] is True
+            assert d.get("is_chest_xray", True) is True, f"real test X-ray rejected by the chest gate: {d}"
             assert set(probs) == set(classes)
             assert abs(sum(probs.values()) - 1) < 1e-3, probs
             assert d["predicted_class"] in classes
@@ -97,6 +116,18 @@ def main():
         r = requests.post(f"{base}/predict", files={"file": ("notes.txt", b"not an image", "text/plain")}, timeout=30)
         assert r.status_code == 400, r.status_code
         print("[PASS] /predict rejects a non-image with 400")
+
+        if health.get("chest_gate", {}).get("enabled"):
+            r = requests.post(f"{base}/predict", files={"file": ("portrait.jpg", drawn_portrait(), "image/jpeg")},
+                              timeout=120)
+            assert r.status_code == 200, r.status_code
+            d = r.json()
+            assert d["is_chest_xray"] is False and d["predicted_class"] is None, d
+            assert d["class_probabilities"] == {} and d["heatmap_base64"] is None
+            print(f"[PASS] /predict gives no disease result for a non-chest photo "
+                  f"(similarity {d['chest_score']:.2f} < {d['chest_threshold']:.2f})")
+        else:
+            print("[SKIP] chest gate not fitted (run python -m src.gate); non-chest check skipped")
 
         for c in classes:
             r = requests.get(f"{base}/samples/{c}", timeout=30)

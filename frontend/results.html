@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body class="report-page">
 
@@ -70,6 +70,12 @@
             <dt>Image</dt><dd id="imageName">—</dd>
             <dt>Analysed</dt><dd id="analysedAt">—</dd>
           </dl>
+        </section>
+
+        <section class="panel not-chest" id="notChest" hidden>
+          <div class="panel-head"><h2>Not a chest X-ray</h2></div>
+          <p>This tool only analyses chest X-rays. The uploaded image does not look like one, so no disease result, probabilities or heatmap is given.</p>
+          <p class="muted" id="notChestScore"></p>
         </section>
 
         <section class="panel">
@@ -169,7 +175,7 @@
     Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
   </footer>
 
-  <script src="common.js?v=5"></script>
-  <script src="results.js?v=5"></script>
+  <script src="common.js?v=6"></script>
+  <script src="results.js?v=6"></script>
 </body>
 </html>

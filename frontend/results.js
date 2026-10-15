@@ -65,13 +65,40 @@ document.addEventListener('DOMContentLoaded', () => {
   $('reportTitle').textContent = `${patient.name}, ${ageText}`;
   $('reportId').textContent = `Report ${record.reportId}`;
   $('reportDate').textContent = whenText;
-  $('reportModel').textContent = `${result.model} (${result.task === 'binary' ? 'Normal vs Pneumonia' : `${Object.keys(result.class_probabilities).length} classes`})`;
+  $('reportModel').textContent = `${result.model} (${result.task === 'binary' ? 'Normal vs Pneumonia' : `${Object.keys(result.display_names || {}).length} classes`})`;
   document.title = `PulmoScan · Report ${record.reportId}`;
 
   $('patientName').textContent = patient.name;
   $('patientAge').textContent = ageText;
   $('imageName').textContent = `${image.name} · ${image.sizeKB} KB`;
   $('analysedAt').textContent = whenText;
+
+  function fillDetails(rows) {
+    rows.forEach(([k, v]) => {
+      const dt = document.createElement('dt');
+      const dd = document.createElement('dd');
+      dt.textContent = k;
+      dd.textContent = v;
+      $('techDetails').append(dt, dd);
+    });
+  }
+
+  // ---------- Not a chest X-ray: no disease result, probabilities or Grad-CAM ----------
+
+  if (result.is_chest_xray === false) {
+    $('verdict').closest('section').hidden = true;
+    $('aboutDisease').hidden = true;
+    $('viewerTitle').closest('section').hidden = true;
+    $('notChest').hidden = false;
+    $('notChestScore').textContent = `Similarity to chest X-rays: ${Number(result.chest_score).toFixed(2)} (at least ${Number(result.chest_threshold).toFixed(2)} is needed).`;
+    fillDetails([
+      ['Model', result.model || '—'],
+      ['Chest X-ray check', `Not passed (similarity ${Number(result.chest_score).toFixed(2)}, threshold ${Number(result.chest_threshold).toFixed(2)})`],
+      ['Data sent to server', 'Image only (name and age stay in this browser)'],
+    ]);
+    $('printBtn').addEventListener('click', () => window.print());
+    return;
+  }
 
   // ---------- Result ----------
 
@@ -171,19 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Technical details and actions ----------
 
-  [
+  fillDetails([
     ['Model', result.model || '—'],
     ['Task', result.task === 'binary' ? 'Normal vs Pneumonia' : `${probs.length}-class`],
     ['Grad-CAM layer', result.target_layer || '—'],
     ['Preprocessing', 'Grayscale → 224×224 → CLAHE'],
+    ['Chest X-ray check', result.chest_score == null ? 'Not run' : `Passed (similarity ${Number(result.chest_score).toFixed(2)})`],
     ['Data sent to server', 'Image only (name and age stay in this browser)'],
-  ].forEach(([k, v]) => {
-    const dt = document.createElement('dt');
-    const dd = document.createElement('dd');
-    dt.textContent = k;
-    dd.textContent = v;
-    $('techDetails').append(dt, dd);
-  });
+  ]);
 
   $('printBtn').addEventListener('click', () => window.print());
 });

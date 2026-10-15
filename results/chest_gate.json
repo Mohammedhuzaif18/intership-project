@@ -1,0 +1,28 @@
+{
+  "model_file": "models/best_model.keras (4-class ResNet50)",
+  "model_sha256": "d663650c976d850ea0ba91648dd5d65bf4ed629dd45967e2922103384c0ee6de",
+  "feature_layer": "gap",
+  "k": 5,
+  "reference_size": 400,
+  "threshold": 0.7680307030677795,
+  "percentile": 1.0,
+  "validation_similarity": {
+    "min": 0.6129218935966492,
+    "median": 0.8590196371078491
+  },
+  "test_real_xrays_rejected": 3,
+  "test_n": 300,
+  "test_similarity_median": 0.857106626033783,
+  "negatives": {
+    "folder": "21 non-chest images: a screenshot of a face photo plus 20 Windows wallpaper photos",
+    "n": 21,
+    "rejected": 21,
+    "similarity_median": 0.5068225860595703,
+    "accepted_examples": []
+  },
+  "covidqu_test_real_xrays_rejected": {
+    "rejected": 3,
+    "n": 240,
+    "note": "held-out COVID-QU-Ex Normal / Non-COVID test images; all 3 rejected are Non-COVID infection"
+  }
+}

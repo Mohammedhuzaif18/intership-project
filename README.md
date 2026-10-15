@@ -132,7 +132,8 @@ python -m venv --system-site-packages .venv
 # 4. Grad-CAM report (10 test images)
 .venv/Scripts/python -m src.gradcam
 
-# 5. App: then open http://127.0.0.1:8000
+# 5. App: fit the non-chest-image gate for the served model, then open http://127.0.0.1:8000
+.venv/Scripts/python -m src.gate
 .venv/Scripts/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 
 # 6. Integration test (starts its own server on a free port)
@@ -149,6 +150,8 @@ Phase 3 (Kaggle credentials only via the `KAGGLE_USERNAME` / `KAGGLE_KEY` enviro
 ```
 
 The app serves whichever task was trained last; it currently serves the **4-class ResNet50**. To serve the binary model instead, copy `models/binary/resnet50.keras` to `models/best_model.keras` and `models/binary/class_names.json` to `models/class_names.json`.
+
+**Non-chest-image gate.** The classifier alone gives a disease for any image, including a face photo. `python -m src.gate` fits a check for the served model: an upload is compared with 400 training X-rays in the model's own feature space (cosine similarity, 5 nearest), and the threshold is set so about 99% of validation X-rays pass. Uploads below it get "Not a chest X-ray" and no disease, probabilities or heatmap. With the 4-class model the threshold is 0.768. It rejected 3 of 300 held-out test X-rays (1%), 3 of 240 held-out COVID-QU-Ex test X-rays (all pneumonia) and all 21 non-chest photos tried, among them the screenshot of a face photo that the app had labelled COVID-19 at 90.9%. The gate is saved in `models/chest_gate.npz` with the model file's hash, and is switched off if the served model changes; re-run `python -m src.gate` after retraining. It is a similarity check, not a guarantee: unusual images, such as other X-ray body parts, may still pass.
 
 `QUICK_TRAIN=1` runs a few batches per stage to check the pipeline; it does not produce usable models. On a GPU, use [notebooks/ResNet50_Training_Colab.ipynb](notebooks/ResNet50_Training_Colab.ipynb).
 
