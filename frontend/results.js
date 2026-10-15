@@ -108,6 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('predictedClass').textContent = labelFor(cls);
   $('confidenceValue').textContent = fmtPct(conf);
 
+  // The TB class failed an external test (results/external_tbx11k/REPORT.md)
+  $('tbWarning').hidden = cls !== 'TB';
+
   const note = $('verdictNote');
   note.hidden = conf >= 0.7;
   note.textContent = 'Low confidence: the model is unsure about this image.';

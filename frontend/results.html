@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body class="report-page">
 
@@ -94,6 +94,11 @@
             </div>
             <p class="verdict-note" id="verdictNote" hidden></p>
             <p class="truth" id="truthNote" hidden></p>
+            <!-- Numbers from results/external_tbx11k/REPORT.md (4-class ResNet50 on TBX11K) -->
+            <div class="tb-warning" id="tbWarning" role="note" hidden>
+              <strong>Tuberculosis results are not reliable on new X-rays.</strong>
+              <p>In an external test on 799 TB X-rays from a dataset this model never saw (TBX11K), it called only 5.8% of them tuberculosis, against 94.3% on its own held-out test images. A TB result mainly means the X-ray resembles the TB database the model was trained on. TB must be confirmed with sputum tests and a clinician.</p>
+            </div>
           </div>
           <div class="block">
             <h3>Class probabilities</h3>
@@ -175,7 +180,7 @@
     Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
   </footer>
 
-  <script src="common.js?v=6"></script>
-  <script src="results.js?v=6"></script>
+  <script src="common.js?v=7"></script>
+  <script src="results.js?v=7"></script>
 </body>
 </html>

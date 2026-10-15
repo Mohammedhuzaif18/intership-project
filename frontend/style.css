@@ -692,6 +692,28 @@ button {
   color: var(--warn);
 }
 
+.tb-warning {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(242, 184, 75, 0.35);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.tb-warning strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.tb-warning p {
+  margin: 0;
+}
+
 .truth {
   display: flex;
   align-items: center;
