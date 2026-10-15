@@ -1,0 +1,33 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792088470.966241   26020 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792088499.644166   26020 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-15 23:52:06,143 [INFO] Fixed random seed set to: 42
+2026-10-15 23:53:30,689 [INFO] Near-duplicate check: 8399 TBX11K images vs 43976 training-source images {'covidqu': 33920, 'kermany': 5856, 'tbdb': 4200} ...
+2026-10-15 23:57:01,021 [INFO] Duplicate check: {"tbx11k_images": 8399, "dropped_near_duplicates": 46, "threshold": 0.98, "dropped_by_nearest_source": {"covidqu": 35, "tbdb": 11}, "dropped_by_group": {"sick_but_no_tb": 45, "healthy": 1}, "kept_between_0.95_and_threshold": 689, "kept": 8353, "kept_by_group": {"healthy": 3799, "sick_but_no_tb": 3755, "active_tb": 651, "latent_tb": 148}, "max_corr_quantiles": {"0.5": 0.924, "0.9": 0.949, "0.99": 0.963, "1.0": 1.0}}
+I0000 00:00:1792088821.089568   26020 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 23:57:05,320 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 23:57:27,958 [INFO]   ResNet50 (multiclass): 32/8353
+2026-10-15 23:59:31,012 [INFO]   ResNet50 (multiclass): 1312/8353
+2026-10-16 00:01:12,890 [INFO]   ResNet50 (multiclass): 2592/8353
+2026-10-16 00:02:51,613 [INFO]   ResNet50 (multiclass): 3872/8353
+2026-10-16 00:04:20,557 [INFO]   ResNet50 (multiclass): 5152/8353
+2026-10-16 00:05:43,762 [INFO]   ResNet50 (multiclass): 6432/8353
+2026-10-16 00:07:09,200 [INFO]   ResNet50 (multiclass): 7712/8353
+2026-10-16 00:07:53,804 [INFO]   ResNet50 (multiclass): 32/8353
+2026-10-16 00:08:20,576 [INFO]   ResNet50 (multiclass): 1312/8353
+2026-10-16 00:08:49,461 [INFO]   ResNet50 (multiclass): 2592/8353
+2026-10-16 00:09:16,103 [INFO]   ResNet50 (multiclass): 3872/8353
+2026-10-16 00:09:42,692 [INFO]   ResNet50 (multiclass): 5152/8353
+2026-10-16 00:10:08,803 [INFO]   ResNet50 (multiclass): 6432/8353
+2026-10-16 00:10:34,138 [INFO]   ResNet50 (multiclass): 7712/8353
+2026-10-16 00:10:52,340 [INFO]   ResNet50 (binary): 32/8353
+2026-10-16 00:12:16,767 [INFO]   ResNet50 (binary): 1312/8353
+2026-10-16 00:13:37,431 [INFO]   ResNet50 (binary): 2592/8353
+2026-10-16 00:14:59,559 [INFO]   ResNet50 (binary): 3872/8353
+2026-10-16 00:16:21,537 [INFO]   ResNet50 (binary): 5152/8353
+2026-10-16 00:17:42,453 [INFO]   ResNet50 (binary): 6432/8353
+2026-10-16 00:19:03,603 [INFO]   ResNet50 (binary): 7712/8353
+2026-10-16 00:20:07,867 [INFO] External test written to C:\Users\mohdh\OneDrive\Desktop\intership\results\external_tbx11k

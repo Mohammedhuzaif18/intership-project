@@ -1,0 +1,10 @@
+# False alarms on healthy adults, and chest-gate rejections of real X-rays (TBX11K)
+
+| Check                                               | Rate (95% CI)       |
+|:----------------------------------------------------|:--------------------|
+| 4-class ResNet50 (app): healthy called Normal       | 92.9% (92.0%-93.6%) |
+| Binary ResNet50 (Kermany): healthy called Pneumonia | 12.3% (11.3%-13.4%) |
+| Chest gate rejects real X-rays: Healthy             | 0.0% (0.0%-0.1%)    |
+| Chest gate rejects real X-rays: Sick, not TB        | 0.5% (0.3%-0.8%)    |
+| Chest gate rejects real X-rays: Active TB           | 0.0% (0.0%-0.6%)    |
+| Chest gate rejects real X-rays: Latent TB           | 0.0% (0.0%-2.5%)    |

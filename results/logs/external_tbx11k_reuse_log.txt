@@ -1,0 +1,11 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792090319.990077   16072 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792090331.133959   16072 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-16 00:22:22,508 [INFO] Fixed random seed set to: 42
+2026-10-16 00:22:43,530 [INFO] Duplicate check: {"tbx11k_images": 8399, "dropped_near_duplicates": 46, "threshold": 0.98, "dropped_by_nearest_source": {"covidqu": 35, "tbdb": 11}, "dropped_by_group": {"sick_but_no_tb": 45, "healthy": 1}, "kept_between_0.95_and_threshold": 689, "kept": 8353, "kept_by_group": {"healthy": 3799, "sick_but_no_tb": 3755, "active_tb": 651, "latent_tb": 148}, "max_corr_quantiles": {"0.5": 0.924, "0.9": 0.949, "0.99": 0.963, "1.0": 1.0}, "recheck_128px": {"size": 128, "dropped": {"n": 46, "median": 0.9993, "min": 0.9943, "max": 1.0, "at_least_0.98": 46}, "kept_near_miss": {"n": 689, "median": 0.9395, "min": 0.9064, "max": 0.9626, "at_least_0.98": 0}}}
+I0000 00:00:1792090363.568098   16072 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-16 00:22:46,755 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-16 00:25:49,959 [INFO] External test written to C:\Users\mohdh\OneDrive\Desktop\intership\results\external_tbx11k

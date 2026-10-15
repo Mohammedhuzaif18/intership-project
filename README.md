@@ -41,6 +41,8 @@ Per class, ResNet50 F1 is Normal 0.809, Pneumonia / Non-COVID infection 0.794, C
 
 Both models keep about 90% pneumonia recall on the new source, but their specificity falls to 0.58 and 0.27: each mistakes the other population's healthy X-rays for disease. **Dataset hygiene finding:** 5,172 COVID-QU-Ex images are copies of Kermany images and 3,472 of the 3,500 TB-database normals are copies of COVID-QU-Ex images. They were found by thumbnail correlation, removed, and confirmed visually.
 
+**External test (TBX11K; no model was trained on it):** `results/external_tbx11k/REPORT.md`. Shenzhen, Montgomery and RSNA could not serve: they are already inside the TB database. 46 TBX11K images that were copies of training images were dropped first. On the rest, the app's 4-class ResNet50 finds **5.8% of 799 TB images** (TB-vs-healthy AUC 0.838), against 94.3% recall and AUC 0.999 on its held-out test split. The TB result does not transfer to a new source. Healthy adults are still called Normal 92.9% of the time.
+
 ## Objectives
 
 | # | Objective | Status | Where |

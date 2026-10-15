@@ -1,0 +1,27 @@
+{
+  "tbx11k_images": 8399,
+  "dropped_near_duplicates": 46,
+  "threshold": 0.98,
+  "dropped_by_nearest_source": {
+    "covidqu": 35,
+    "tbdb": 11
+  },
+  "dropped_by_group": {
+    "sick_but_no_tb": 45,
+    "healthy": 1
+  },
+  "kept_between_0.95_and_threshold": 689,
+  "kept": 8353,
+  "kept_by_group": {
+    "healthy": 3799,
+    "sick_but_no_tb": 3755,
+    "active_tb": 651,
+    "latent_tb": 148
+  },
+  "max_corr_quantiles": {
+    "0.5": 0.924,
+    "0.9": 0.949,
+    "0.99": 0.963,
+    "1.0": 1.0
+  }
+}

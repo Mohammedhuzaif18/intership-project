@@ -1,0 +1,17 @@
+{
+  "size": 128,
+  "dropped": {
+    "n": 46,
+    "median": 0.9993,
+    "min": 0.9943,
+    "max": 1.0,
+    "at_least_0.98": 46
+  },
+  "kept_near_miss": {
+    "n": 689,
+    "median": 0.9395,
+    "min": 0.9064,
+    "max": 0.9626,
+    "at_least_0.98": 0
+  }
+}

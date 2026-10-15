@@ -1,0 +1,222 @@
+{
+  "duplicate_check": {
+    "tbx11k_images": 8399,
+    "dropped_near_duplicates": 46,
+    "threshold": 0.98,
+    "dropped_by_nearest_source": {
+      "covidqu": 35,
+      "tbdb": 11
+    },
+    "dropped_by_group": {
+      "sick_but_no_tb": 45,
+      "healthy": 1
+    },
+    "kept_between_0.95_and_threshold": 689,
+    "kept": 8353,
+    "kept_by_group": {
+      "healthy": 3799,
+      "sick_but_no_tb": 3755,
+      "active_tb": 651,
+      "latent_tb": 148
+    },
+    "max_corr_quantiles": {
+      "0.5": 0.924,
+      "0.9": 0.949,
+      "0.99": 0.963,
+      "1.0": 1.0
+    },
+    "recheck_128px": {
+      "size": 128,
+      "dropped": {
+        "n": 46,
+        "median": 0.9993,
+        "min": 0.9943,
+        "max": 1.0,
+        "at_least_0.98": 46
+      },
+      "kept_near_miss": {
+        "n": 689,
+        "median": 0.9395,
+        "min": 0.9064,
+        "max": 0.9626,
+        "at_least_0.98": 0
+      }
+    }
+  },
+  "tb_detection": [
+    {
+      "Model": "4-class ResNet50 (app)",
+      "TB found (all TB)": "5.8% (4.3%-7.6%)",
+      "TB found (active)": "6.3% (4.7%-8.4%)",
+      "TB found (latent)": "3.4% (1.5%-7.7%)",
+      "Healthy called TB": "0.2% (0.1%-0.3%)",
+      "Sick-not-TB called TB": "2.0% (1.6%-2.5%)",
+      "P(TB) AUC, TB vs healthy": "0.838 (0.822-0.853)",
+      "P(TB) AUC, TB vs all non-TB": "0.709 (0.691-0.727)",
+      "Seen-source test: TB recall / AUC": "94.3% / 0.999"
+    },
+    {
+      "Model": "4-class baseline CNN",
+      "TB found (all TB)": "0.4% (0.1%-1.1%)",
+      "TB found (active)": "0.3% (0.1%-1.1%)",
+      "TB found (latent)": "0.7% (0.1%-3.7%)",
+      "Healthy called TB": "0.0% (0.0%-0.1%)",
+      "Sick-not-TB called TB": "0.1% (0.0%-0.2%)",
+      "P(TB) AUC, TB vs healthy": "0.579 (0.555-0.602)",
+      "P(TB) AUC, TB vs all non-TB": "0.507 (0.484-0.530)",
+      "Seen-source test: TB recall / AUC": "64.3% / 0.997"
+    }
+  ],
+  "any_finding": [
+    {
+      "Model": "4-class ResNet50 (app)",
+      "Healthy flagged (any disease)": "7.1% (6.4%-8.0%)",
+      "Sick-not-TB flagged": "63.0% (61.5%-64.5%)",
+      "TB flagged (any disease)": "40.2% (36.8%-43.6%)",
+      "AUC, 1 - P(Normal): sick or TB vs healthy": "0.856 (0.849-0.864)"
+    },
+    {
+      "Model": "4-class baseline CNN",
+      "Healthy flagged (any disease)": "44.6% (43.0%-46.1%)",
+      "Sick-not-TB flagged": "92.5% (91.6%-93.3%)",
+      "TB flagged (any disease)": "64.3% (60.9%-67.6%)",
+      "AUC, 1 - P(Normal): sick or TB vs healthy": "0.851 (0.843-0.859)"
+    },
+    {
+      "Model": "Binary ResNet50 (Kermany)",
+      "Healthy flagged (any disease)": "12.3% (11.3%-13.4%)",
+      "Sick-not-TB flagged": "74.1% (72.7%-75.5%)",
+      "TB flagged (any disease)": "45.6% (42.1%-49.0%)",
+      "AUC, 1 - P(Normal): sick or TB vs healthy": "0.848 (0.840-0.856)"
+    }
+  ],
+  "predicted_classes": [
+    {
+      "Model": "4-class ResNet50 (app)",
+      "TBX11K images": "Healthy",
+      "n": 3799,
+      "-> NORMAL": "92.9%",
+      "-> PNEUMONIA": "0.3%",
+      "-> COVID": "6.7%",
+      "-> TB": "0.2%"
+    },
+    {
+      "Model": "4-class ResNet50 (app)",
+      "TBX11K images": "Sick, not TB",
+      "n": 3755,
+      "-> NORMAL": "37.0%",
+      "-> PNEUMONIA": "11.9%",
+      "-> COVID": "49.1%",
+      "-> TB": "2.0%"
+    },
+    {
+      "Model": "4-class ResNet50 (app)",
+      "TBX11K images": "Active TB",
+      "n": 651,
+      "-> NORMAL": "59.3%",
+      "-> PNEUMONIA": "4.3%",
+      "-> COVID": "30.1%",
+      "-> TB": "6.3%"
+    },
+    {
+      "Model": "4-class ResNet50 (app)",
+      "TBX11K images": "Latent TB",
+      "n": 148,
+      "-> NORMAL": "62.2%",
+      "-> PNEUMONIA": "4.1%",
+      "-> COVID": "30.4%",
+      "-> TB": "3.4%"
+    },
+    {
+      "Model": "4-class baseline CNN",
+      "TBX11K images": "Healthy",
+      "n": 3799,
+      "-> NORMAL": "55.4%",
+      "-> PNEUMONIA": "0.4%",
+      "-> COVID": "44.1%",
+      "-> TB": "0.0%"
+    },
+    {
+      "Model": "4-class baseline CNN",
+      "TBX11K images": "Sick, not TB",
+      "n": 3755,
+      "-> NORMAL": "7.5%",
+      "-> PNEUMONIA": "0.9%",
+      "-> COVID": "91.5%",
+      "-> TB": "0.1%"
+    },
+    {
+      "Model": "4-class baseline CNN",
+      "TBX11K images": "Active TB",
+      "n": 651,
+      "-> NORMAL": "37.0%",
+      "-> PNEUMONIA": "0.9%",
+      "-> COVID": "61.8%",
+      "-> TB": "0.3%"
+    },
+    {
+      "Model": "4-class baseline CNN",
+      "TBX11K images": "Latent TB",
+      "n": 148,
+      "-> NORMAL": "29.7%",
+      "-> PNEUMONIA": "1.4%",
+      "-> COVID": "68.2%",
+      "-> TB": "0.7%"
+    },
+    {
+      "Model": "Binary ResNet50 (Kermany)",
+      "TBX11K images": "Healthy",
+      "n": 3799,
+      "-> NORMAL": "87.7%",
+      "-> PNEUMONIA": "12.3%"
+    },
+    {
+      "Model": "Binary ResNet50 (Kermany)",
+      "TBX11K images": "Sick, not TB",
+      "n": 3755,
+      "-> NORMAL": "25.9%",
+      "-> PNEUMONIA": "74.1%"
+    },
+    {
+      "Model": "Binary ResNet50 (Kermany)",
+      "TBX11K images": "Active TB",
+      "n": 651,
+      "-> NORMAL": "55.3%",
+      "-> PNEUMONIA": "44.7%"
+    },
+    {
+      "Model": "Binary ResNet50 (Kermany)",
+      "TBX11K images": "Latent TB",
+      "n": 148,
+      "-> NORMAL": "50.7%",
+      "-> PNEUMONIA": "49.3%"
+    }
+  ],
+  "false_alarms_and_gate": [
+    {
+      "Check": "4-class ResNet50 (app): healthy called Normal",
+      "Rate (95% CI)": "92.9% (92.0%-93.6%)"
+    },
+    {
+      "Check": "Binary ResNet50 (Kermany): healthy called Pneumonia",
+      "Rate (95% CI)": "12.3% (11.3%-13.4%)"
+    },
+    {
+      "Check": "Chest gate rejects real X-rays: Healthy",
+      "Rate (95% CI)": "0.0% (0.0%-0.1%)"
+    },
+    {
+      "Check": "Chest gate rejects real X-rays: Sick, not TB",
+      "Rate (95% CI)": "0.5% (0.3%-0.8%)"
+    },
+    {
+      "Check": "Chest gate rejects real X-rays: Active TB",
+      "Rate (95% CI)": "0.0% (0.0%-0.6%)"
+    },
+    {
+      "Check": "Chest gate rejects real X-rays: Latent TB",
+      "Rate (95% CI)": "0.0% (0.0%-2.5%)"
+    }
+  ],
+  "gate_threshold": 0.7680307030677795
+}

@@ -1,0 +1,8 @@
+# TB detection on TBX11K (external; 95% CIs)
+
+TB found = predicted class is TB. AUC uses the predicted TB probability. The last column is the same model on its held-out test split from the training sources, for reference.
+
+| Model                  | TB found (all TB)   | TB found (active)   | TB found (latent)   | Healthy called TB   | Sick-not-TB called TB   | P(TB) AUC, TB vs healthy   | P(TB) AUC, TB vs all non-TB   | Seen-source test: TB recall / AUC   |
+|:-----------------------|:--------------------|:--------------------|:--------------------|:--------------------|:------------------------|:---------------------------|:------------------------------|:------------------------------------|
+| 4-class ResNet50 (app) | 5.8% (4.3%-7.6%)    | 6.3% (4.7%-8.4%)    | 3.4% (1.5%-7.7%)    | 0.2% (0.1%-0.3%)    | 2.0% (1.6%-2.5%)        | 0.838 (0.822-0.853)        | 0.709 (0.691-0.727)           | 94.3% / 0.999                       |
+| 4-class baseline CNN   | 0.4% (0.1%-1.1%)    | 0.3% (0.1%-1.1%)    | 0.7% (0.1%-3.7%)    | 0.0% (0.0%-0.1%)    | 0.1% (0.0%-0.2%)        | 0.579 (0.555-0.602)        | 0.507 (0.484-0.530)           | 64.3% / 0.997                       |
