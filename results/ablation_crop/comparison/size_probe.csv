@@ -1,0 +1,6 @@
+Probe features,n train,n test,test_roc_auc,test_balanced_accuracy
+Native width + height + aspect ratio (Review-I probe),4658,583,0.91198808637379,0.8390618019359642
+"Aspect ratio only (kept by squash as distorted anatomy, removed by crop)",4658,583,0.8608265078183173,0.78867460908414
+Crop side only (native resolution of the centre square: all the size left after cropping),4658,583,0.9117200297840656,0.8390618019359642
+Lung area + lung bounding box in the squash model input (no pixels),4130,517,0.9369273385893885,0.8611051921301229
+Lung area + lung bounding box in the crop model input (no pixels),4130,517,0.927338589388451,0.8505398110661269
