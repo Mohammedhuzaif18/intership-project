@@ -1,0 +1,22 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792082500.654353   15832 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792082504.784833   15832 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-15 22:11:47,973 [INFO] Fixed random seed set to: 42
+2026-10-15 22:11:48,295 [INFO] 5172 Kermany images have a COVID-QU-Ex lung mask
+2026-10-15 22:12:04,009 [INFO] Lung framing for 4647 train/test images with masks ...
+I0000 00:00:1792082541.866921   15832 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 22:12:23,125 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 22:12:26,600 [INFO] Kermany test: preprocessing 583 images for both variants (517 with lung masks) ...
+2026-10-15 22:15:17,850 [INFO] Kermany test / ResNet50 / squash: Grad-CAM at conv5_block3_out on 583 images done
+2026-10-15 22:17:36,453 [INFO] Kermany test / ResNet50 / crop: Grad-CAM at conv5_block3_out on 583 images done
+2026-10-15 22:18:00,328 [INFO] Kermany test / Baseline CNN / squash: Grad-CAM at block4_out on 583 images done
+2026-10-15 22:18:23,756 [INFO] Kermany test / Baseline CNN / crop: Grad-CAM at block4_out on 583 images done
+2026-10-15 22:18:26,876 [INFO] COVID-QU-Ex unseen: preprocessing 2400 images for both variants (2400 with lung masks) ...
+2026-10-15 22:28:55,217 [INFO] COVID-QU-Ex unseen / ResNet50 / squash: Grad-CAM at conv5_block3_out on 2400 images done
+2026-10-15 22:38:58,552 [INFO] COVID-QU-Ex unseen / ResNet50 / crop: Grad-CAM at conv5_block3_out on 2400 images done
+2026-10-15 22:40:29,436 [INFO] COVID-QU-Ex unseen / Baseline CNN / squash: Grad-CAM at block4_out on 2400 images done
+2026-10-15 22:42:01,361 [INFO] COVID-QU-Ex unseen / Baseline CNN / crop: Grad-CAM at block4_out on 2400 images done
+2026-10-15 22:42:11,366 [INFO] Ablation comparison written to C:\Users\mohdh\OneDrive\Desktop\intership\results\ablation_crop\comparison

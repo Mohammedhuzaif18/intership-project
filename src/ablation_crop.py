@@ -44,7 +44,7 @@ CROSS_CSV = ROOT / "splits" / "cross_dataset" / "covidqu_normal_pneumonia.csv"
 CENTRAL_BOX = (0.15, 0.85, 0.15, 0.85)  # x0, x1, y0, y1 as fractions of the native image
 BORDER = 0.10                           # outer band of the model input, as a fraction of its side
 N_BOOT = 2000
-BATCH = 32
+BATCH = 8  # Grad-CAM batch; 32 ran out of memory on the COVID-QU-Ex pass
 REGIONS = ("lung", "box", "border")
 
 
@@ -450,7 +450,7 @@ def plot_examples(keep: dict, path, per_class: int = 3):
     has_mask = items["mask"].notna()
     picks = pd.concat([items[has_mask & (items["label"] == c)].sample(per_class, random_state=SEED)
                        for c in BINARY_CLASSES])
-    fig, axes = plt.subplots(2, len(picks), figsize=(2.3 * len(picks), 5.2))
+    fig, axes = plt.subplots(2, len(picks), figsize=(2.3 * len(picks), 6.2))
     for col, (i, r) in enumerate(picks.iterrows()):
         prep = keep["prepared"][i]
         for row, v in enumerate(VARIANTS):
@@ -473,7 +473,8 @@ def plot_examples(keep: dict, path, per_class: int = 3):
                 ax.text(0.5, 1.2, f"{r['label'].capitalize()}  ({r['width']}x{r['height']})", transform=ax.transAxes,
                         ha="center", fontsize=9, fontweight="semibold", color=TEXT)
     fig.suptitle("ResNet50 Grad-CAM on Kermany test images (white outline: COVID-QU-Ex lung mask)", fontsize=11)
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    # Explicit spacing: the column headers sit outside the axes, which tight_layout ignores
+    fig.subplots_adjust(top=0.84, bottom=0.01, left=0.01, right=0.99, hspace=0.16, wspace=0.06)
     save(fig, path, dpi=150)
 
 

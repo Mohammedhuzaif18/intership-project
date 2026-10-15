@@ -1,0 +1,11 @@
+file,subtype,true,pred,confidence,correct,figure
+data/raw/extracted/chest_xray/train/NORMAL/IM-0729-0001.jpeg,normal,NORMAL,NORMAL,0.9082,True,01_NORMAL_pred_NORMAL_ok.png
+data/raw/extracted/chest_xray/train/NORMAL/NORMAL2-IM-1335-0001.jpeg,normal,NORMAL,NORMAL,0.9924,True,02_NORMAL_pred_NORMAL_ok.png
+data/raw/extracted/chest_xray/train/NORMAL/IM-0268-0001.jpeg,normal,NORMAL,NORMAL,0.9895,True,03_NORMAL_pred_NORMAL_ok.png
+data/raw/extracted/chest_xray/train/PNEUMONIA/person581_bacteria_2400.jpeg,bacteria,PNEUMONIA,PNEUMONIA,0.9994,True,04_PNEUMONIA_pred_PNEUMONIA_ok.png
+data/raw/extracted/chest_xray/train/PNEUMONIA/person581_bacteria_2392.jpeg,bacteria,PNEUMONIA,PNEUMONIA,0.9999,True,05_PNEUMONIA_pred_PNEUMONIA_ok.png
+data/raw/extracted/chest_xray/train/PNEUMONIA/person1039_bacteria_2973.jpeg,bacteria,PNEUMONIA,PNEUMONIA,0.9896,True,06_PNEUMONIA_pred_PNEUMONIA_ok.png
+data/raw/extracted/chest_xray/train/PNEUMONIA/person273_virus_562.jpeg,virus,PNEUMONIA,NORMAL,0.9648,False,07_PNEUMONIA_pred_NORMAL_wrong.png
+data/raw/extracted/chest_xray/train/PNEUMONIA/person558_bacteria_2328.jpeg,bacteria,PNEUMONIA,NORMAL,0.962,False,08_PNEUMONIA_pred_NORMAL_wrong.png
+data/raw/extracted/chest_xray/test/NORMAL/NORMAL2-IM-0283-0001.jpeg,normal,NORMAL,PNEUMONIA,0.8495,False,09_NORMAL_pred_PNEUMONIA_wrong.png
+data/raw/extracted/chest_xray/train/NORMAL/NORMAL2-IM-1157-0001.jpeg,normal,NORMAL,PNEUMONIA,0.8269,False,10_NORMAL_pred_PNEUMONIA_wrong.png
