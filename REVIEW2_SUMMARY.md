@@ -111,7 +111,7 @@ Both models were retrained with the Review-I protocol (class weights; ResNet50 5
 | Model | Accuracy (95% CI) | Macro precision | Macro recall | Macro F1 | Macro OvR ROC-AUC |
 |---|---|---|---|---|---|
 | Baseline CNN | 72.6% (69.4–75.6) | 0.813 | 0.712 | 0.734 | 0.934 |
-| **ResNet50** (selected) | **82.4%** (79.5–84.8) | **0.847** | **0.845** | **0.844** | **0.962** |
+| **ResNet50** (selected) | **82.3%** (79.5–84.8) | **0.847** | **0.845** | **0.844** | **0.962** |
 
 ResNet50 is significantly better here (exact McNemar p = 7e-8; 140 vs 63 discordant images). The baseline over-predicts COVID-19: recall 0.96 but precision 0.59, and 72 normals labelled COVID-19.
 

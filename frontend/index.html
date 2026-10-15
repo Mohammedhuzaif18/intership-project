@@ -4,17 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
-  <title>PulmoScan · Chest X-ray Analysis</title>
+  <title>PulmoScan · New analysis</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
   <header class="topbar">
     <div class="topbar-inner">
-      <div class="brand">
+      <a class="brand" href="index.html">
         <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3v8"/>
           <path d="M12 9c-1.5-1-3-1.4-4.5-1C5 8.5 4 12 4 15.5 4 18.5 5.5 20 7.5 20c2 0 3-1 3.5-2.5L12 11"/>
@@ -24,7 +24,7 @@
           <div class="brand-name">PulmoScan</div>
           <div class="brand-sub">Interpretable chest X-ray classification</div>
         </div>
-      </div>
+      </a>
       <div class="status" id="status" data-state="checking" role="status" aria-live="polite">
         <span class="status-dot"></span>
         <span id="statusText">Connecting to model…</span>
@@ -39,140 +39,111 @@
     <p><strong>Educational prototype, not a diagnostic tool.</strong> Not a certified medical device; do not use it for diagnosis or treatment decisions.</p>
   </div>
 
-  <main class="layout">
+  <main class="home">
+    <section class="hero">
+      <h1>Chest X-ray analysis with a visual explanation</h1>
+      <p>Enter the patient's details, add a frontal chest X-ray, and get a report with the predicted condition, the model's confidence and a Grad-CAM heatmap of what it looked at.</p>
+    </section>
 
-    <!-- Viewer -->
-    <section class="panel viewer" aria-labelledby="viewerTitle">
-      <div class="panel-head">
-        <h2 id="viewerTitle">Radiograph</h2>
-        <div class="toolbar" id="toolbar" hidden>
-          <div class="segmented" role="radiogroup" aria-label="View mode">
-            <button type="button" role="radio" data-mode="original" aria-checked="false">Original</button>
-            <button type="button" role="radio" data-mode="input" aria-checked="false" title="What the network sees: grayscale, 224x224, CLAHE">Model input</button>
-            <button type="button" role="radio" data-mode="overlay" aria-checked="true">Overlay</button>
-            <button type="button" role="radio" data-mode="compare" aria-checked="false">Compare</button>
+    <div class="home-grid">
+      <form class="panel intake" id="intakeForm" novalidate>
+        <!-- Step 1 -->
+        <fieldset class="step-block">
+          <legend><span class="step-num">1</span>Patient details</legend>
+          <div class="fields">
+            <div class="field">
+              <label for="patientName">Full name</label>
+              <input type="text" id="patientName" name="name" maxlength="60" autocomplete="off" placeholder="e.g. Asha Kumar" required>
+              <p class="field-error" id="nameError" hidden>Enter a name (2 to 60 characters).</p>
+            </div>
+            <div class="field field-age">
+              <label for="patientAge">Age (years)</label>
+              <input type="number" id="patientAge" name="age" min="0" max="120" step="1" inputmode="numeric" placeholder="e.g. 34" required>
+              <p class="field-error" id="ageError" hidden>Enter an age from 0 to 120.</p>
+            </div>
           </div>
-          <button type="button" class="btn btn-ghost" id="replaceBtn">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-            New image
+          <p class="privacy-note">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            Name and age stay in this browser tab for the report. Only the image is sent to the model.
+          </p>
+        </fieldset>
+
+        <!-- Step 2 -->
+        <fieldset class="step-block">
+          <legend><span class="step-num">2</span>Chest X-ray</legend>
+
+          <div class="dropzone" id="dropZone" tabindex="0" role="button" aria-label="Upload a chest X-ray">
+            <div class="dropzone-inner" id="dropPrompt">
+              <div class="dropzone-icon">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              </div>
+              <p class="dropzone-title">Drop a chest X-ray here</p>
+              <p class="dropzone-hint">or <span class="link">browse files</span> · JPEG or PNG, frontal (PA/AP) view</p>
+            </div>
+            <div class="picked" id="picked" hidden>
+              <img id="pickedImg" alt="Selected chest X-ray">
+              <div class="picked-meta">
+                <p class="picked-name" id="pickedName"></p>
+                <p class="picked-sub" id="pickedSub"></p>
+                <span class="link">Choose a different image</span>
+              </div>
+            </div>
+            <input type="file" id="fileInput" accept="image/png,image/jpeg" hidden>
+          </div>
+          <p class="field-error" id="imageError" hidden>Add a chest X-ray image.</p>
+
+          <div class="samples" id="samples" hidden>
+            <span class="samples-label">No X-ray at hand? Use a held-out test image:</span>
+            <div class="samples-row" id="sampleButtons"></div>
+          </div>
+        </fieldset>
+
+        <!-- Step 3 -->
+        <div class="step-block step-submit">
+          <div class="error" id="errorState" role="alert" hidden>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            <div>
+              <p class="error-title">Analysis failed</p>
+              <p class="error-msg" id="errorMsg"></p>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" id="analyzeBtn">
+            <span class="btn-label">Analyze and view report</span>
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
           </button>
         </div>
-      </div>
+      </form>
 
-      <div class="dropzone" id="dropZone" tabindex="0" role="button" aria-label="Upload a chest X-ray">
-        <div class="dropzone-inner">
-          <div class="dropzone-icon">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-          </div>
-          <p class="dropzone-title">Drop a chest X-ray here</p>
-          <p class="dropzone-hint">or <span class="link">browse files</span> · JPEG or PNG, frontal (PA/AP) view</p>
-        </div>
-        <input type="file" id="fileInput" accept="image/png,image/jpeg" hidden>
-      </div>
-
-      <div class="stage" id="stage" data-mode="overlay" hidden>
-        <figure class="pane" id="paneMain">
-          <div class="frame">
-            <img class="layer-base" id="imgBase" alt="Chest X-ray">
-            <img class="layer-heat" id="imgHeat" alt="" aria-hidden="true">
-            <div class="scan" aria-hidden="true"></div>
-          </div>
-          <figcaption id="captionMain">Original</figcaption>
-        </figure>
-        <figure class="pane pane-compare">
-          <div class="frame">
-            <img class="layer-base" id="imgBase2" alt="" aria-hidden="true">
-            <img class="layer-heat" id="imgHeat2" alt="Grad-CAM heatmap over the X-ray">
-          </div>
-          <figcaption>Grad-CAM overlay</figcaption>
-        </figure>
-      </div>
-
-      <div class="viewer-foot" id="viewerFoot" hidden>
-        <div class="opacity" id="opacityControl" hidden>
-          <label for="opacitySlider">Heatmap opacity</label>
-          <input type="range" id="opacitySlider" min="0" max="90" value="45" step="5">
-          <output id="opacityVal" for="opacitySlider">45%</output>
-        </div>
-        <div class="file-meta" id="fileMeta"></div>
-      </div>
-
-      <div class="samples" id="samples" hidden>
-        <span class="samples-label">Try a held-out test image</span>
-        <div class="samples-row" id="sampleButtons"></div>
-      </div>
-    </section>
-
-    <!-- Analysis -->
-    <section class="panel analysis" aria-labelledby="analysisTitle" aria-live="polite">
-      <div class="panel-head">
-        <h2 id="analysisTitle">Analysis</h2>
-      </div>
-
-      <div class="empty" id="emptyState">
+      <aside class="panel about-model">
+        <h2>How it works</h2>
         <ol class="steps">
-          <li><span>1</span>Add a chest X-ray, or pick a test image.</li>
-          <li><span>2</span>The model classifies it and reports its confidence.</li>
-          <li><span>3</span>Grad-CAM shows which regions drove that decision.</li>
+          <li><span>1</span>The X-ray is converted to grayscale, resized to 224×224 and contrast-enhanced (CLAHE), exactly as in training.</li>
+          <li><span>2</span>A ResNet50 network fine-tuned on public chest X-ray datasets estimates the probability of each condition.</li>
+          <li><span>3</span>Grad-CAM highlights the regions that most influenced the prediction.</li>
         </ol>
-      </div>
-
-      <div class="loading" id="loadingState" hidden>
-        <div class="spinner" aria-hidden="true"></div>
-        <p>Running the model and computing Grad-CAM…</p>
-      </div>
-
-      <div class="error" id="errorState" role="alert" hidden>
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
-        <div>
-          <p class="error-title">Analysis failed</p>
-          <p class="error-msg" id="errorMsg"></p>
-        </div>
-      </div>
-
-      <div class="result" id="resultState" hidden>
-        <div class="verdict" id="verdict">
-          <div class="eyebrow">Prediction</div>
-          <div class="verdict-row">
-            <div class="verdict-class">
-              <span class="class-dot" id="verdictDot"></span>
-              <span id="predictedClass">—</span>
-            </div>
-            <div class="verdict-conf">
-              <span class="conf-value" id="confidenceValue">—</span>
-              <span class="conf-label">confidence</span>
-            </div>
-          </div>
-          <p class="verdict-note" id="verdictNote" hidden></p>
-          <p class="truth" id="truthNote" hidden></p>
-        </div>
-
-        <div class="block">
-          <h3>Class probabilities</h3>
-          <ul class="probs" id="probBars"></ul>
-        </div>
-
-        <div class="block">
-          <h3>Reading the heatmap</h3>
-          <div class="legend">
-            <div class="legend-bar"></div>
-            <div class="legend-labels"><span>Less influence</span><span>More influence</span></div>
-          </div>
-          <p class="muted">Warm regions are where the image most changed the model's score for the predicted class. They show what the model relied on, not confirmed pathology. Highlights outside the lungs suggest it may be using shortcuts.</p>
-        </div>
-
-        <details class="block details">
-          <summary>Technical details</summary>
-          <dl class="kv" id="techDetails"></dl>
-        </details>
-      </div>
-    </section>
+        <dl class="kv model-facts" id="modelFacts">
+          <dt>Model</dt><dd id="factModel">—</dd>
+          <dt>Detects</dt><dd id="factClasses">—</dd>
+          <dt>Test accuracy</dt><dd id="factAccuracy">—</dd>
+        </dl>
+        <p class="muted">Accuracy is measured on held-out test images from the same datasets. On X-rays from other hospitals it was 13–22 points lower in testing.</p>
+      </aside>
+    </div>
   </main>
+
+  <div class="busy-overlay" id="busyOverlay" hidden>
+    <div class="busy-card" role="status" aria-live="assertive">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="busy-title">Analyzing the X-ray…</p>
+      <p class="muted">Running the model and computing Grad-CAM</p>
+    </div>
+  </div>
 
   <footer class="footer">
     Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
   </footer>
 
-  <script src="app.js?v=4"></script>
+  <script src="common.js?v=5"></script>
+  <script src="home.js?v=5"></script>
 </body>
 </html>

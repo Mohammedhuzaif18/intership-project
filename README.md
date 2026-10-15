@@ -28,7 +28,7 @@ ResNet50 accuracy by subtype: bacterial pneumonia 98.2% (276 images), viral 94.6
 | Model | Accuracy (95% CI) | Macro precision | Macro recall | Macro F1 | Macro OvR ROC-AUC |
 |---|---|---|---|---|---|
 | Baseline CNN | 72.6% (69.4–75.6) | 0.813 | 0.712 | 0.734 | 0.934 |
-| **ResNet50** (selected on validation macro F1) | **82.4%** (79.5–84.8) | 0.847 | 0.845 | 0.844 | 0.962 |
+| **ResNet50** (selected on validation macro F1) | **82.3%** (79.5–84.8) | 0.847 | 0.845 | 0.844 | 0.962 |
 
 Per class, ResNet50 F1 is Normal 0.809, Pneumonia / Non-COVID infection 0.794, COVID-19 0.836 and Tuberculosis 0.936 (`results/multiclass/per_class_metrics.md`). ResNet50 beats the baseline significantly (McNemar p = 7e-8). Within a class, accuracy depends on the source: for Pneumonia it is 87.5% on Kermany images vs 70.0% on COVID-QU-Ex images. TB comes from one dataset only, so its AUC of 0.999 likely includes a source shortcut.
 
