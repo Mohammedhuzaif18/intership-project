@@ -142,5 +142,70 @@ For the same label, the model is much better on Kermany's pediatric single-centr
 
 The multi-class ResNet50 is now the model the app serves (`models/best_model.keras` + `models/class_names.json`); the UI picks up the four class names from the API.
 
-<!-- CROSS -->
+The integration test was re-run against the 4-class model and passes. One real test image per class, from all three sources, plus a misclassified COVID-19 case, gives the same class and probabilities through the API as in the offline evaluation. The UI shows four sample buttons and four probability bars (`results/app/app_multiclass_tb.jpg`). In that screenshot the TB prediction (99.9%) has its strongest Grad-CAM heat on a bright label patch at the bottom edge, a visible example of the single-source TB concern above.
+
+## 4. Cross-dataset generalization
+
+**Design.** Normal vs Pneumonia/infection is the only task that two independent sources share, so it is the one that can be tested on an unseen source. Both directions use ResNet50 with the same protocol and test images only.
+
+- **A: trained on Kermany** (the Review-I model; pediatric, one centre). Tested on its own Kermany test split and on **2,400 COVID-QU-Ex** Normal / Non-COVID images (adults, many centres) that it never saw. None of them is a copy of a Kermany image, thanks to the deduplication above.
+- **B: trained on COVID-QU-Ex** Normal / Non-COVID (1,920 train images). Tested on COVID-QU-Ex test images and on the **Kermany** test split.
+
+| Trained on | Tested on | Seen in training | n | Accuracy | Recall (pneumonia) | Specificity | F1 | ROC-AUC |
+|---|---|---|---|---|---|---|---|---|
+| Kermany | Kermany | yes | 583 | 95.7% | 0.969 | 0.924 | 0.971 | 0.993 |
+| Kermany | COVID-QU-Ex | **no** | 2,400 | **73.9%** | 0.897 | **0.581** | 0.774 | 0.873 |
+| COVID-QU-Ex | COVID-QU-Ex | yes | 240 | 87.5% | 0.825 | 0.925 | 0.868 | 0.933 |
+| COVID-QU-Ex | Kermany | **no** | 583 | **74.3%** | 0.918 | **0.272** | 0.839 | 0.660 |
+
+**Accuracy drop on the unseen source: 21.8 points (Kermany -> COVID-QU-Ex) and 13.2 points (COVID-QU-Ex -> Kermany).**
+
+**What it means.**
+
+- Both models keep catching pneumonia on the new source (recall about 0.9), but they **mistake the other population's healthy X-rays for disease**. Specificity falls to 0.58 and 0.27.
+- What each model learned as "normal" is tied to its training population: pediatric single-centre vs adult multi-centre images, with different devices, positioning and post-processing. Kermany's 95.7% in-distribution accuracy therefore overstates how the model would do in another hospital.
+- The ranking quality drops too (AUC 0.993 -> 0.873, and 0.933 -> 0.660), so this is not only a threshold problem.
+
+Files: `results/cross_dataset/cross_dataset_results.md`, `accuracy_drop.csv`, and four confusion matrices.
+
+## 5. Limitations
+
+1. **Dataset shortcuts are real and measurable.**
+   - In Kermany, image size alone predicts the class (test AUC 0.912).
+   - In the multi-class set, accuracy depends on the source within a class, and TB comes from a single source.
+   - Grad-CAM repeatedly shows heat on borders, side markers and label patches.
+
+   The reported accuracies are upper bounds for these datasets, not estimates of clinical performance.
+2. **Poor cross-population transfer:** an accuracy drop of 13–22 points on an unseen source.
+3. **Duplicates across public datasets.** About 5,200 COVID-QU-Ex images are Kermany images, and almost all TB-database normals are COVID-QU-Ex images. These were removed here, but published results that mix these datasets without checking are likely inflated. The near-duplicate check catches resized or re-encoded copies, not crops or heavy edits.
+4. **No patient IDs** in COVID-QU-Ex or the TB database, so different X-rays of the same patient there could still sit in different splits. Only near-identical images are grouped.
+5. **Labels** come from the source datasets (image-level, no radiologist re-read); "Pneumonia" merges bacterial, viral and other non-COVID infections.
+6. **Compute:** CPU-only training with a fixed small epoch budget (5 + 3) and no hyperparameter search. A GPU run (Colab notebook) could train longer.
+7. **Grad-CAM is coarse** (7x7 for ResNet50) and shows influence, not causation or localization of disease.
+
+## 6. Future scope
+
+- **Remove the size/aspect shortcut:** crop to the lung region (COVID-QU-Ex ships lung masks) or centre-crop to square before resizing; then re-check the size-only probe and Grad-CAM.
+- **Train on several sources and evaluate leave-one-source-out**, add site/source-invariant training (e.g. domain-adversarial heads), and calibrate the probabilities per source.
+- Add an external TB source (e.g. NIAID TB Portals, which needs a data agreement), so that TB is not single-source.
+- Use lung-mask-guided attention or report how much of the Grad-CAM energy falls inside the lung masks, as an automatic shortcut metric.
+- Report sensitivity/specificity at clinically chosen thresholds, with confidence intervals and calibration plots, and add DICOM upload to the app.
+
+## 7. How to run everything
+
+```bash
+.venv/Scripts/python -m src.data.prepare                 # Review-I data
+.venv/Scripts/python -m src.train --task binary          # Review-I models
+.venv/Scripts/python -m src.gradcam                      # Grad-CAM report
+# Phase 3 (Kaggle credentials in KAGGLE_USERNAME / KAGGLE_KEY, or local folders)
+.venv/Scripts/python -m src.data.multiclass --covidqu-dir data/raw/covidqu --tb-dir data/raw/tb_database
+.venv/Scripts/python -m src.train --task multiclass      # also makes it the app's model
+.venv/Scripts/python -m src.gradcam --task multiclass
+.venv/Scripts/python -m src.cross_dataset --reverse
+# App
+.venv/Scripts/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000   # open http://127.0.0.1:8000
+.venv/Scripts/python tests/test_integration.py
+```
+
+To serve the binary model again instead of the 4-class one, copy `models/binary/resnet50.keras` to `models/best_model.keras` and `models/binary/class_names.json` to `models/class_names.json`.
 

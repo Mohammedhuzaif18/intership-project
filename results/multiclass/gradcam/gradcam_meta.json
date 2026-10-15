@@ -1,6 +1,6 @@
 {
   "model": "ResNet50",
   "layer": "conv5_block3_out",
-  "n": 8,
+  "n": 10,
   "wrong": 4
 }

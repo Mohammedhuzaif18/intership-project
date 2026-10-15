@@ -154,7 +154,7 @@ def report(task: str = "binary"):
                      "confidence": round(float(probs[idx]), 4), "correct": bool(correct), "figure": fname})
 
     cols = 5
-    fig, axes = plt.subplots(int(np.ceil(len(tiles) / cols)), cols, figsize=(3.1 * cols, 3.6 * np.ceil(len(tiles) / cols)))
+    fig, axes = plt.subplots(int(np.ceil(len(tiles) / cols)), cols, figsize=(3.1 * cols, 4.2 * np.ceil(len(tiles) / cols)))
     for ax, (over, title, correct) in zip(np.ravel(axes), tiles):
         ax.imshow(over)
         lines = [textwrap.fill(part, 30) for part in title.split(" | ")]
@@ -163,7 +163,7 @@ def report(task: str = "binary"):
     for ax in np.ravel(axes)[len(tiles):]:
         ax.axis("off")
     fig.suptitle(f"Grad-CAM, {meta['model']} ({cam.layer_name}), held-out test images", fontsize=12)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, 0.95), h_pad=2.0)
     save(fig, out_dir / "gradcam_grid.png", dpi=150)
     pd.DataFrame(rows).to_csv(out_dir / "gradcam_summary.csv", index=False)
     save_json({"model": meta["model"], "layer": cam.layer_name, "n": len(rows),

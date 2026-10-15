@@ -2,7 +2,7 @@
 
 > **Educational prototype, not a diagnostic tool.** Not an FDA/CE certified medical device. Never use it for clinical decisions.
 
-An end-to-end pipeline that classifies chest X-rays as **Normal** or **Pneumonia**, explains each prediction with **Grad-CAM**, and serves both through a **FastAPI** backend and a web frontend. The project is split into Review-I (data, baseline CNN, ResNet50 transfer learning, evaluation) and Review-II (Grad-CAM, app, multi-class extension). Progress is tracked step by step in [PROGRESS.md](PROGRESS.md); the Review write-ups are [REVIEW1_SUMMARY.md](REVIEW1_SUMMARY.md) and [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
+An end-to-end pipeline that classifies chest X-rays as **Normal** or **Pneumonia** (Review-I) and then as **Normal, Pneumonia / Non-COVID infection, COVID-19 or Tuberculosis** (Review-II). It explains each prediction with **Grad-CAM**, serves the model through a **FastAPI** backend and a web frontend, and measures how well the models transfer to an unseen dataset. The project is split into Review-I (data, baseline CNN, ResNet50 transfer learning, evaluation) and Review-II (Grad-CAM, app, multi-class extension). Progress is tracked step by step in [PROGRESS.md](PROGRESS.md); the Review write-ups are [REVIEW1_SUMMARY.md](REVIEW1_SUMMARY.md) and [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
 
 ## Results (held-out test set only)
 
@@ -23,7 +23,36 @@ ResNet50 accuracy by subtype: bacterial pneumonia 98.2% (276 images), viral 94.6
 - **App**: FastAPI `/health`, `/predict`, `/samples` and a responsive web UI with probability bars, an aligned heatmap overlay with four views, and a disclaimer. Screenshots are in `results/app/`.
 - **Integration test passes**: through the API, real test X-rays get the same class and probabilities as the offline test evaluation. Details: [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
 
-<!-- RESULTS-III -->
+### Review-II Phase 3: Multi-class extension (Kermany + COVID-QU-Ex + TB database, test n = 793)
+
+| Model | Accuracy (95% CI) | Macro precision | Macro recall | Macro F1 | Macro OvR ROC-AUC |
+|---|---|---|---|---|---|
+| Baseline CNN | 72.6% (69.4–75.6) | 0.813 | 0.712 | 0.734 | 0.934 |
+| **ResNet50** (selected on validation macro F1) | **82.4%** (79.5–84.8) | 0.847 | 0.845 | 0.844 | 0.962 |
+
+Per class, ResNet50 F1 is Normal 0.809, Pneumonia / Non-COVID infection 0.794, COVID-19 0.836 and Tuberculosis 0.936 (`results/multiclass/per_class_metrics.md`). ResNet50 beats the baseline significantly (McNemar p = 7e-8). Within a class, accuracy depends on the source: for Pneumonia it is 87.5% on Kermany images vs 70.0% on COVID-QU-Ex images. TB comes from one dataset only, so its AUC of 0.999 likely includes a source shortcut.
+
+**Cross-dataset test (Normal vs Pneumonia, ResNet50, test images only):**
+
+| Trained on | Seen-source accuracy | Unseen-source accuracy | Drop |
+|---|---|---|---|
+| Kermany | 95.7% (Kermany) | 73.9% (COVID-QU-Ex, n = 2,400) | **21.8 points** |
+| COVID-QU-Ex | 87.5% (COVID-QU-Ex) | 74.3% (Kermany, n = 583) | **13.2 points** |
+
+Both models keep about 90% pneumonia recall on the new source, but their specificity falls to 0.58 and 0.27: each mistakes the other population's healthy X-rays for disease. **Dataset hygiene finding:** 5,172 COVID-QU-Ex images are copies of Kermany images and 3,472 of the 3,500 TB-database normals are copies of COVID-QU-Ex images. They were found by thumbnail correlation, removed, and confirmed visually.
+
+## Objectives
+
+| # | Objective | Status | Where |
+|---|---|---|---|
+| 1 | Collect, analyse, clean and preprocess (EDA, quality checks, CLAHE, resize, normalize, imbalance, augmentation) | Done | `src/data/`, `results/eda/`, `results/preprocessing_before_after.png` |
+| 2 | Baseline CNN | Done | `src/models.py`; test acc 94.2% |
+| 3 | ResNet50 transfer learning vs baseline | Done | test acc 95.7%, AUC 0.993; `results/model_comparison.md` |
+| 4 | Accuracy, precision, recall, F1, confusion matrix, ROC-AUC; class imbalance | Done | `results/`, class weights, CIs + McNemar |
+| 5 | Grad-CAM | Done | `src/gradcam.py`, `results/gradcam/`, `results/multiclass/gradcam/` |
+| 6 | FastAPI backend + web frontend (class, confidence, Grad-CAM) | Done | `backend/`, `frontend/`, `tests/test_integration.py` (passes) |
+| 7 | Multi-class (Normal, Pneumonia/Non-COVID, COVID-19, TB) + cross-dataset test | Done (TB included) | `results/multiclass/`, `results/cross_dataset/` |
+
 
 ## Datasets
 
@@ -79,8 +108,8 @@ intership/
 ├── frontend/                # index.html, style.css, app.js
 ├── tests/test_integration.py
 ├── notebooks/               # Colab notebook + generator
-├── splits/                  # file lists: binary/{train,val,test,removed}.csv
-├── results/                 # figures, tables, logs
+├── splits/                  # file lists: binary/, multiclass/ ({train,val,test,removed}.csv), cross_dataset/
+├── results/                 # figures, tables, logs (eda/, gradcam/, app/, multiclass/, cross_dataset/, logs/)
 ├── models/                  # trained models + class_names.json (git-ignored)
 └── data/                    # raw + preprocessed images (git-ignored)
 ```
@@ -110,14 +139,16 @@ python -m venv --system-site-packages .venv
 .venv/Scripts/python tests/test_integration.py
 ```
 
-Phase 3 (needs `KAGGLE_USERNAME` and `KAGGLE_KEY` in the environment):
+Phase 3 (Kaggle credentials only via the `KAGGLE_USERNAME` / `KAGGLE_KEY` environment variables, or pass folders you downloaded yourself):
 
 ```bash
-.venv/Scripts/python -m src.data.multiclass          # or: --covidqu-dir <folder> --tb-dir <folder>
+.venv/Scripts/python -m src.data.multiclass --covidqu-dir data/raw/covidqu --tb-dir data/raw/tb_database   # or no flags to download via Kaggle
 .venv/Scripts/python -m src.train --task multiclass  # also makes it the model the app serves
 .venv/Scripts/python -m src.gradcam --task multiclass
-.venv/Scripts/python -m src.cross_dataset            # add --reverse to also train on COVID-QU-Ex
+.venv/Scripts/python -m src.cross_dataset --reverse  # both directions
 ```
+
+The app serves whichever task was trained last; it currently serves the **4-class ResNet50**. To serve the binary model instead, copy `models/binary/resnet50.keras` to `models/best_model.keras` and `models/binary/class_names.json` to `models/class_names.json`.
 
 `QUICK_TRAIN=1` runs a few batches per stage to check the pipeline; it does not produce usable models. On a GPU, use [notebooks/ResNet50_Training_Colab.ipynb](notebooks/ResNet50_Training_Colab.ipynb).
 

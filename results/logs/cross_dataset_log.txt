@@ -13,3 +13,20 @@ Epoch 4/5
 Epoch 4: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
 60/60 - 79s - 1s/step - accuracy: 0.8562 - auc: 0.9265 - loss: 0.3373 - val_accuracy: 0.8375 - val_auc: 0.8961 - val_loss: 0.3869 - learning_rate: 3.0000e-04
 Epoch 5/5
+Epoch 5: ReduceLROnPlateau reducing learning rate to 2.700000040931627e-05.
+60/60 - 80s - 1s/step - accuracy: 0.8630 - auc: 0.9328 - loss: 0.3254 - val_accuracy: 0.8417 - val_auc: 0.8969 - val_loss: 0.3860 - learning_rate: 9.0000e-05
+Epoch 5: early stopping
+Restoring model weights from the end of the best epoch: 2.
+2026-10-15 17:39:31,684 [INFO] resnet50: phase 2, fine-tune last 20 layers, 3 epochs at lr 1e-5
+Epoch 1/3
+60/60 - 96s - 2s/step - accuracy: 0.8521 - auc: 0.9249 - loss: 0.3433 - val_accuracy: 0.8208 - val_auc: 0.9042 - val_loss: 0.3899 - learning_rate: 1.0000e-05
+Epoch 2/3
+60/60 - 89s - 1s/step - accuracy: 0.8620 - auc: 0.9340 - loss: 0.3220 - val_accuracy: 0.8250 - val_auc: 0.9087 - val_loss: 0.3822 - learning_rate: 1.0000e-05
+Epoch 3/3
+60/60 - 91s - 2s/step - accuracy: 0.8786 - auc: 0.9363 - loss: 0.3098 - val_accuracy: 0.8250 - val_auc: 0.9080 - val_loss: 0.3743 - learning_rate: 1.0000e-05
+Restoring model weights from the end of the best epoch: 3.
+2026-10-15 17:44:39,702 [INFO] Reverse model budget: {'baseline': 8, 'frozen': 5, 'finetune': 3}
+2026-10-15 17:44:39,782 [INFO] Cross-dataset results:
+ Trained on  Seen-source accuracy  Unseen-source accuracy  Accuracy drop (points)  Seen-source F1  Unseen-source F1
+    Kermany              0.957118                 0.73875               21.836835        0.970554          0.774379
+COVID-QU-Ex              0.875000                 0.74271               13.228988        0.868421          0.838710

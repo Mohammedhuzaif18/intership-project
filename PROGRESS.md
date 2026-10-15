@@ -31,7 +31,7 @@
 
 - [x] 14. Datasets: COVID-QU-Ex (`anasmohammedtahir/covidqu`, CC BY-SA 4.0; 33,920 images verified) + TB Chest X-ray Database (`tawsifurrahman/tuberculosis-tb-chest-xray-dataset`, authors' copyright, cite; 3,500 Normal + 700 TB verified); Non-COVID infection merged into PNEUMONIA -> 4 classes NORMAL / PNEUMONIA / COVID / TB.
 - [x] 15. Shortcut controls: identical CLAHE preprocessing; 3 exact + 8,644 near-duplicate copies removed (5,172 COVID-QU-Ex = Kermany images, 3,472 TB-db normals = COVID-QU-Ex images; thumbnail r >= 0.98, visually confirmed); Normal and Pneumonia balanced 1,200 per source; split stratified by class x source, grouped by patient / near-duplicate cluster; hash + cluster overlap asserted. 7,925 images, 6,339/793/793.
-- [ ] 16. Retrain baseline CNN + ResNet50 multi-class with class weights; test metrics incl. per-class P/R/F1, confusion matrix, OvR ROC-AUC in `./results/multiclass`.
-- [ ] 17. Cross-dataset test: train on some sources, test on an unseen source, report accuracy drop.
-- [ ] 18. Save multi-class model + updated class_names.json; backend + frontend use it.
-- [ ] 19. REVIEW2_SUMMARY.md; README.md final update; commit; tag `review-2`.
+- [x] 16. Multi-class retrain with class weights (test n=793): baseline CNN acc 72.6%, macro F1 0.734, AUC 0.934; ResNet50 acc 82.4% (CI 79.5-84.8), macro F1 0.844, macro OvR AUC 0.962 (McNemar p=7e-8); per-class + per-source tables, CM, ROC in `results/multiclass/`.
+- [x] 17. Cross-dataset (Normal vs Pneumonia, ResNet50): Kermany-trained 95.7% -> 73.9% on unseen COVID-QU-Ex (drop 21.8 pts); COVID-QU-Ex-trained 87.5% -> 74.3% on Kermany (drop 13.2 pts); specificity collapses on the unseen population. `results/cross_dataset/`.
+- [x] 18. 4-class ResNet50 + class_names.json installed in `models/`; backend/frontend pick up the 4 classes; integration test re-run and passing; UI checked in the browser.
+- [x] 19. REVIEW2_SUMMARY.md and final README written; committed and tagged `review-2`.

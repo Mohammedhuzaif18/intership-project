@@ -1,9 +1,11 @@
 file,subtype,true,pred,confidence,correct,figure
-data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Val/COVID-19/images/sub-S12063_ses-E23713_run-1_bp-chest_vp-ap_cr.png,covid-19,COVID,COVID,0.7974,True,01_COVID_pred_COVID_ok.png
-data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/Normal/images/Normal (10932).png,normal,NORMAL,NORMAL,0.7889,True,02_NORMAL_pred_NORMAL_ok.png
+data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/Normal/images/Normal (10932).png,normal,NORMAL,NORMAL,0.7889,True,01_NORMAL_pred_NORMAL_ok.png
+data/raw/extracted/chest_xray/train/NORMAL/NORMAL2-IM-0702-0001.jpeg,normal,NORMAL,NORMAL,0.9929,True,02_NORMAL_pred_NORMAL_ok.png
 data/raw/extracted/chest_xray/train/PNEUMONIA/person920_virus_1577.jpeg,virus,PNEUMONIA,PNEUMONIA,0.9557,True,03_PNEUMONIA_pred_PNEUMONIA_ok.png
-data/raw/tb_database/TB_Chest_Radiography_Database/Tuberculosis/Tuberculosis-60.png,tuberculosis,TB,TB,0.9858,True,04_TB_pred_TB_ok.png
-data/raw/extracted/chest_xray/test/NORMAL/NORMAL2-IM-0219-0001.jpeg,normal,NORMAL,PNEUMONIA,0.9999,False,05_NORMAL_pred_PNEUMONIA_wrong.png
-data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/COVID-19/images/sub-S10439_ses-E26525_run-1_bp-chest_vp-ap_dx.png,covid-19,COVID,PNEUMONIA,0.9945,False,06_COVID_pred_PNEUMONIA_wrong.png
-data/raw/extracted/chest_xray/test/NORMAL/NORMAL2-IM-0316-0001.jpeg,normal,NORMAL,PNEUMONIA,0.9918,False,07_NORMAL_pred_PNEUMONIA_wrong.png
-data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/Non-COVID/images/non_COVID (7210).png,non-covid,PNEUMONIA,NORMAL,0.9901,False,08_PNEUMONIA_pred_NORMAL_wrong.png
+data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Val/COVID-19/images/sub-S12063_ses-E23713_run-1_bp-chest_vp-ap_cr.png,covid-19,COVID,COVID,0.7974,True,04_COVID_pred_COVID_ok.png
+data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/COVID-19/images/sub-S11839_ses-E22591_run-1_bp-chest_vp-ap_dx.png,covid-19,COVID,COVID,0.9866,True,05_COVID_pred_COVID_ok.png
+data/raw/tb_database/TB_Chest_Radiography_Database/Tuberculosis/Tuberculosis-60.png,tuberculosis,TB,TB,0.9858,True,06_TB_pred_TB_ok.png
+data/raw/extracted/chest_xray/test/NORMAL/NORMAL2-IM-0219-0001.jpeg,normal,NORMAL,PNEUMONIA,0.9999,False,07_NORMAL_pred_PNEUMONIA_wrong.png
+data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/COVID-19/images/sub-S10439_ses-E26525_run-1_bp-chest_vp-ap_dx.png,covid-19,COVID,PNEUMONIA,0.9945,False,08_COVID_pred_PNEUMONIA_wrong.png
+data/raw/extracted/chest_xray/test/NORMAL/NORMAL2-IM-0316-0001.jpeg,normal,NORMAL,PNEUMONIA,0.9918,False,09_NORMAL_pred_PNEUMONIA_wrong.png
+data/raw/covidqu/Lung Segmentation Data/Lung Segmentation Data/Train/Non-COVID/images/non_COVID (7210).png,non-covid,PNEUMONIA,NORMAL,0.9901,False,10_PNEUMONIA_pred_NORMAL_wrong.png
