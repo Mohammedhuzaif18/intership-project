@@ -25,6 +25,7 @@ from src.config import (
     MODELS_DIR,
     MULTICLASS_DISPLAY_NAMES,
     MULTICLASS_ORDER,
+    PREPROCESS_VARIANT,
     RESULTS_DIR,
     SEED,
 )
@@ -94,7 +95,7 @@ def train_transfer(backbone, num_classes, train_ds, val_ds, weights):
 def run(task: str, backbone: str):
     set_seed(SEED)
     device = detect_device()
-    logger.info(f"Task={task} device={device} backbone={backbone} quick={QUICK}")
+    logger.info(f"Task={task} device={device} backbone={backbone} preprocessing={PREPROCESS_VARIANT} quick={QUICK}")
 
     results_dir = RESULTS_DIR if task == "binary" else RESULTS_DIR / task
     model_dir = MODELS_DIR / task
@@ -211,8 +212,9 @@ def run(task: str, backbone: str):
         "model_file": f"{best['slug']}.keras",
         "target_layer": find_target_layer(best["model"]),
         "threshold": 0.5 if num_classes == 2 else None,
-        "preprocessing": {"steps": ["grayscale", f"resize {IMAGE_SIZE[0]}x{IMAGE_SIZE[1]} (INTER_AREA)",
-                                    "CLAHE", "3-channel RGB"],
+        "preprocessing": {"variant": PREPROCESS_VARIANT,
+                          "steps": ["grayscale"] + (["centre-crop to square"] if PREPROCESS_VARIANT == "crop" else [])
+                          + [f"resize {IMAGE_SIZE[0]}x{IMAGE_SIZE[1]} (INTER_AREA)", "CLAHE", "3-channel RGB"],
                           "clahe_clip_limit": CLAHE_CLIP_LIMIT, "clahe_tile_grid": list(CLAHE_TILE_GRID)},
         "selection": "highest validation F1" + (" (macro)" if num_classes > 2 else ""),
         "val_f1": best["val"]["f1"],

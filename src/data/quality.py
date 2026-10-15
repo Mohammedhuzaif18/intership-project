@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from src.config import DISPLAY_NAMES
-from src.data.preprocessing import load_image, preprocess_gray, resize_gray, to_gray_uint8
+from src.config import DISPLAY_NAMES, PREPROCESS_VARIANT
+from src.data.preprocessing import fit_to_input, load_image, preprocess_gray, to_gray_uint8
 from src.plotting import CLASS_COLORS, SERIES, TEXT_2, plt, save
 from src.utils import absolute, logger, sha256_file
 
@@ -162,7 +162,7 @@ def plot_intensity_histograms(df: pd.DataFrame, classes, path, n: int = 300, see
         raw_h, pre_h = np.zeros(256), np.zeros(256)
         for p in picks["path"]:
             img = load_image(absolute(p))
-            raw_h += np.histogram(resize_gray(to_gray_uint8(img)), bins=bins, density=True)[0]
+            raw_h += np.histogram(fit_to_input(to_gray_uint8(img)), bins=bins, density=True)[0]
             pre_h += np.histogram(preprocess_gray(img), bins=bins, density=True)[0]
         color = CLASS_COLORS.get(cls, SERIES[i])
         label = DISPLAY_NAMES.get(cls, cls)
@@ -183,11 +183,12 @@ def plot_preprocessing_examples(df: pd.DataFrame, classes, path, per_class: int 
     """Raw -> resized -> resized + CLAHE for a few images per class."""
     rows = pd.concat([df[df["label"] == c].sample(per_class, random_state=seed) for c in classes])
     fig, axes = plt.subplots(len(rows), 3, figsize=(7.2, 2.5 * len(rows)))
-    titles = ["Raw (native size)", "Grayscale, 224x224", "+ CLAHE (model input)"]
+    fit = "Grayscale, 224x224" if PREPROCESS_VARIANT == "squash" else "Centre square, 224x224"
+    titles = ["Raw (native size)", fit, "+ CLAHE (model input)"]
     for r, (_, row) in enumerate(rows.iterrows()):
         img = load_image(absolute(row["path"]))
         gray = to_gray_uint8(img)
-        panels = [gray, resize_gray(gray), preprocess_gray(img)]
+        panels = [gray, fit_to_input(gray), preprocess_gray(img)]
         for c, panel in enumerate(panels):
             ax = axes[r, c]
             ax.imshow(panel, cmap="gray", vmin=0, vmax=255)

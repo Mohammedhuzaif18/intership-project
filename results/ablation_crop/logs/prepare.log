@@ -1,0 +1,24 @@
+2026-10-15 17:57:50,452 [INFO] HTTP Request: HEAD https://huggingface.co/datasets/AiresPucrs/chest-xray/resolve/main/chest_xray.zip "HTTP/1.1 302 Found"
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-15 17:57:50,468 [WARNING] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-10-15 17:57:50,484 [INFO] Kermany zip: C:\Users\mohdh\.cache\huggingface\hub\datasets--AiresPucrs--chest-xray\snapshots\a7105bddb445ae00c307c09b6c8f1430c6e9c497\chest_xray.zip
+2026-10-15 17:57:50,484 [INFO] Kermany already extracted.
+2026-10-15 17:57:50,484 [INFO] chest_xray/
+2026-10-15 17:57:50,484 [INFO]     test/
+2026-10-15 17:57:50,500 [INFO]         NORMAL/  (234 images)
+2026-10-15 17:57:50,500 [INFO]         PNEUMONIA/  (390 images)
+2026-10-15 17:57:50,500 [INFO]     train/
+2026-10-15 17:57:50,516 [INFO]         NORMAL/  (1341 images)
+2026-10-15 17:57:50,548 [INFO]         PNEUMONIA/  (3875 images)
+2026-10-15 17:57:50,548 [INFO]     val/
+2026-10-15 17:57:50,548 [INFO]         NORMAL/  (8 images)
+2026-10-15 17:57:50,548 [INFO]         PNEUMONIA/  (8 images)
+2026-10-15 17:57:50,548 [INFO] Images per class: {'NORMAL': 1583, 'PNEUMONIA': 4273}  total=5856
+2026-10-15 17:58:33,111 [INFO] Collected 5856 images from ['test', 'train', 'val'] (merged): {'PNEUMONIA': 4273, 'NORMAL': 1583}
+2026-10-15 17:58:33,111 [INFO] Scanning 5856 files (decode check + SHA-256) ...
+2026-10-15 17:59:40,935 [INFO] Quality check: {'images_found': 5856, 'corrupt_removed': 0, 'exact_duplicates_removed': 32, 'conflicting_duplicates_removed': 0, 'images_kept': 5824, 'image_modes': {'L': 5541, 'RGB': 283}}
+2026-10-15 17:59:40,983 [INFO] Subtypes: {('NORMAL', 'normal'): 1579, ('PNEUMONIA', 'bacteria'): 2760, ('PNEUMONIA', 'virus'): 1485}
+2026-10-15 17:59:40,983 [INFO] Patient grouping: 3117 patients for 5824 images; 0 filenames without a parseable patient id (each treated as its own patient)
+2026-10-15 17:59:56,584 [INFO] Verification passed: no 'group' appears in more than one split.
+2026-10-15 17:59:56,601 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-15 18:00:30,072 [INFO] Preprocessing 5824 images (variant=crop, CLAHE clip=2.0, tiles=(8, 8), size=(224, 224)) with 8 threads ...

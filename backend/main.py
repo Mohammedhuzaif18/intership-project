@@ -121,7 +121,8 @@ async def predict(file: UploadFile = File(...)):
 
     meta = state["meta"]
     classes = meta["classes"]
-    model_input = preprocess_image(image)  # identical to the training preprocessing
+    # Identical to the training preprocessing; models trained before the crop ablation carry no variant (squash)
+    model_input = preprocess_image(image, meta.get("preprocessing", {}).get("variant", "squash"))
     try:
         probs, heat, idx = state["cam"](model_input)
     except Exception as e:

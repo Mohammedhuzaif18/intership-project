@@ -1,7 +1,10 @@
 """
 Image preprocessing shared by training, Grad-CAM and the API.
 
-grayscale -> resize to 224x224 (INTER_AREA) -> CLAHE -> 3-channel RGB, uint8.
+grayscale -> fit to 224x224 -> CLAHE -> 3-channel RGB, uint8.
+The fit step depends on the variant (src.config.PREPROCESS_VARIANT):
+  squash (default, all reported results): resize the whole image (INTER_AREA); the aspect ratio is not kept
+  crop (ablation): take the central square, then resize (INTER_AREA); no aspect-ratio distortion
 Normalization to the model's input range happens inside each model
 (Rescaling(1/255) for the baseline, resnet50.preprocess_input for ResNet50),
 so every caller feeds the same uint8 RGB array.
@@ -13,7 +16,7 @@ import cv2
 import numpy as np
 from PIL import Image
 
-from src.config import CLAHE_CLIP_LIMIT, CLAHE_TILE_GRID, IMAGE_SIZE
+from src.config import CLAHE_CLIP_LIMIT, CLAHE_TILE_GRID, IMAGE_SIZE, PREPROCESS_VARIANT, PREPROCESS_VARIANTS
 from src.utils import logger
 
 
@@ -40,19 +43,35 @@ def resize_gray(gray: np.ndarray) -> np.ndarray:
     return cv2.resize(gray, IMAGE_SIZE, interpolation=cv2.INTER_AREA)
 
 
+def center_square(width: int, height: int) -> tuple[int, int, int]:
+    """(left, top, side) of the largest centred square inside a width x height image."""
+    side = min(width, height)
+    return (width - side) // 2, (height - side) // 2, side
+
+
+def fit_to_input(gray: np.ndarray, variant: str = PREPROCESS_VARIANT) -> np.ndarray:
+    """Geometric step: native-size grayscale -> 224x224 for the given preprocessing variant."""
+    if variant not in PREPROCESS_VARIANTS:
+        raise ValueError(f"Unknown preprocessing variant {variant!r}")
+    if variant == "crop":
+        left, top, side = center_square(gray.shape[1], gray.shape[0])
+        gray = gray[top:top + side, left:left + side]
+    return resize_gray(gray)
+
+
 def apply_clahe(gray: np.ndarray) -> np.ndarray:
     clahe = cv2.createCLAHE(clipLimit=CLAHE_CLIP_LIMIT, tileGridSize=CLAHE_TILE_GRID)
     return clahe.apply(gray)
 
 
-def preprocess_gray(img) -> np.ndarray:
+def preprocess_gray(img, variant: str = PREPROCESS_VARIANT) -> np.ndarray:
     """Preprocessed single-channel 224x224 uint8 image."""
-    return apply_clahe(resize_gray(to_gray_uint8(img)))
+    return apply_clahe(fit_to_input(to_gray_uint8(img), variant))
 
 
-def preprocess_image(img) -> np.ndarray:
+def preprocess_image(img, variant: str = PREPROCESS_VARIANT) -> np.ndarray:
     """Model input: 224x224x3 uint8 RGB (the three channels are identical)."""
-    return np.repeat(preprocess_gray(img)[..., None], 3, axis=-1)
+    return np.repeat(preprocess_gray(img, variant)[..., None], 3, axis=-1)
 
 
 def load_image(path) -> Image.Image:
@@ -76,8 +95,8 @@ def _preprocess_one(args):
 def preprocess_files(pairs, workers: int = 8) -> None:
     """pairs: iterable of (source path, destination .png path)."""
     pairs = list(pairs)
-    logger.info(f"Preprocessing {len(pairs)} images (CLAHE clip={CLAHE_CLIP_LIMIT}, tiles={CLAHE_TILE_GRID}, "
-                f"size={IMAGE_SIZE}) with {workers} threads ...")
+    logger.info(f"Preprocessing {len(pairs)} images (variant={PREPROCESS_VARIANT}, CLAHE clip={CLAHE_CLIP_LIMIT}, "
+                f"tiles={CLAHE_TILE_GRID}, size={IMAGE_SIZE}) with {workers} threads ...")
     with ThreadPoolExecutor(max_workers=workers) as pool:
         errors = [e for e in pool.map(_preprocess_one, pairs) if e]
     if errors:
