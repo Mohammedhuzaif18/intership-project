@@ -1,0 +1,87 @@
+{
+  "status": "ready",
+  "classes": [
+    "NORMAL",
+    "PNEUMONIA",
+    "COVID",
+    "TB"
+  ],
+  "tb_included": true,
+  "per_source_cap": 1200,
+  "near_duplicate_threshold_corr": 0.98,
+  "removed": {
+    "near-duplicate": 8644,
+    "exact duplicate": 3
+  },
+  "composition": [
+    {
+      "label": "COVID",
+      "source": "covidqu",
+      "available": 11956,
+      "selected": 2400
+    },
+    {
+      "label": "NORMAL",
+      "source": "covidqu",
+      "available": 9134,
+      "selected": 1200
+    },
+    {
+      "label": "NORMAL",
+      "source": "kermany",
+      "available": 1579,
+      "selected": 1200
+    },
+    {
+      "label": "NORMAL",
+      "source": "tbdb",
+      "available": 28,
+      "selected": 28
+    },
+    {
+      "label": "PNEUMONIA",
+      "source": "covidqu",
+      "available": 7658,
+      "selected": 1200
+    },
+    {
+      "label": "PNEUMONIA",
+      "source": "kermany",
+      "available": 4245,
+      "selected": 1200
+    },
+    {
+      "label": "TB",
+      "source": "tbdb",
+      "available": 697,
+      "selected": 697
+    }
+  ],
+  "split_counts": [
+    {
+      "split": "train",
+      "COVID": 1920,
+      "NORMAL": 1942,
+      "PNEUMONIA": 1920,
+      "TB": 557
+    },
+    {
+      "split": "val",
+      "COVID": 240,
+      "NORMAL": 243,
+      "PNEUMONIA": 240,
+      "TB": 70
+    },
+    {
+      "split": "test",
+      "COVID": 240,
+      "NORMAL": 243,
+      "PNEUMONIA": 240,
+      "TB": 70
+    }
+  ],
+  "datasets": {
+    "COVID-QU-Ex": "kaggle anasmohammedtahir/covidqu (CC BY-SA 4.0)",
+    "TB": "kaggle tawsifurrahman/tuberculosis-tb-chest-xray-dataset (data (c) original authors; cite Rahman et al., IEEE Access 2020)"
+  }
+}

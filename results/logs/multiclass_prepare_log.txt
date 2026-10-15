@@ -1,0 +1,25 @@
+2026-10-15 16:07:51,265 [INFO] COVID-QU-Ex: 33920 images {'COVID': 11956, 'PNEUMONIA': 11263, 'NORMAL': 10701} -> verified
+2026-10-15 16:07:51,397 [INFO] TB database: 4200 images {'NORMAL': 3500, 'TB': 700} -> verified
+2026-10-15 16:08:19,996 [INFO] Scanning 38120 files (decode check + SHA-256) ...
+2026-10-15 16:09:28,129 [INFO] Computing 32x32 thumbnails for near-duplicate checks on 43941 images ...
+2026-10-15 16:10:20,218 [INFO] covidqu: 5172 images are near-duplicates of ['kermany'] images and are dropped
+2026-10-15 16:10:22,058 [INFO] tbdb: 3472 images are near-duplicates of ['kermany', 'covidqu'] images and are dropped
+2026-10-15 16:10:22,237 [INFO] Composition (available -> selected):
+                   available  selected
+label     source                      
+COVID     covidqu      11956      2400
+NORMAL    covidqu       9134      1200
+          kermany       1579      1200
+          tbdb            28        28
+PNEUMONIA covidqu       7658      1200
+          kermany       4245      1200
+TB        tbdb           697       697
+2026-10-15 16:10:28,127 [INFO] Verification passed: no 'group' appears in more than one split.
+2026-10-15 16:10:28,139 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-15 16:10:28,150 [INFO] Verification passed: no 'cluster' appears in more than one split.
+2026-10-15 16:10:32,340 [INFO] Preprocessing 7925 images (CLAHE clip=2.0, tiles=(8, 8), size=(224, 224)) with 8 threads ...
+2026-10-15 16:10:51,476 [INFO] Preprocessing finished.
+2026-10-15 16:10:51,576 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\multiclass\train.csv (6339 rows)
+2026-10-15 16:10:51,599 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\multiclass\val.csv (793 rows)
+2026-10-15 16:10:51,620 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\multiclass\test.csv (793 rows)
+2026-10-15 16:10:52,947 [INFO] Multi-class dataset ready: ['NORMAL', 'PNEUMONIA', 'COVID', 'TB'], 7925 images

@@ -17,13 +17,19 @@ ResNet50 accuracy by subtype: bacterial pneumonia 98.2% (276 images), viral 94.6
 
 **Leakage and shortcut checks.** No patient and no file hash is shared between splits. Test accuracy is below 99%, so the >99% leakage rule did not trigger. EDA did find a dataset bias: image width, height and aspect ratio alone predict the class with test ROC-AUC 0.912, because pneumonia images are natively smaller and wider. Grad-CAM shows some predictions leaning on image borders.
 
-<!-- RESULTS-II -->
+### Review-II Phase 2: Grad-CAM and the app
+
+- **Grad-CAM** on ResNet50 `conv5_block3_out` (found programmatically) for 10 test images, 4 of them wrong: `results/gradcam/`. Correct viral cases light up both lung fields. Several pneumonia calls, including both false alarms, lean on image borders, chest wall and burned-in text, which is consistent with the image-size bias.
+- **App**: FastAPI `/health`, `/predict`, `/samples` and a responsive web UI with probability bars, an aligned heatmap overlay with four views, and a disclaimer. Screenshots are in `results/app/`.
+- **Integration test passes**: through the API, real test X-rays get the same class and probabilities as the offline test evaluation. Details: [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
+
+<!-- RESULTS-III -->
 
 ## Datasets
 
 | Dataset | Use | Source | License |
 |---|---|---|---|
-| Chest X-Ray Images (Pneumonia), Kermany et al. 2018 | Core Normal vs Pneumonia (5,856 images, pediatric, Guangzhou) | Hugging Face mirror `AiresPucrs/chest-xray` via `hf_hub_download` (no Kaggle needed) | CC BY 4.0 (original Mendeley release) |
+| Chest X-Ray Images (Pneumonia), Kermany et al. 2018 | Core Normal vs Pneumonia (5,856 images, pediatric, Guangzhou) | Hugging Face mirror `AiresPucrs/chest-xray` via `hf_hub_download` (no Kaggle needed) | CC BY 4.0, Mendeley Data doi:10.17632/rscbjbr9sj (the record also states research use) |
 | COVID-QU-Ex (Tahir et al. 2021) | Phase 3: COVID-19, Non-COVID infection, Normal | Kaggle `anasmohammedtahir/covidqu` | CC BY-SA 4.0 (Kaggle metadata) |
 | Tuberculosis (TB) Chest X-ray Database (Rahman et al., IEEE Access 2020) | Phase 3: TB, Normal | Kaggle `tawsifurrahman/tuberculosis-tb-chest-xray-dataset` | "Data files © Original Authors", research use with citation |
 
@@ -44,9 +50,9 @@ The TB choice: the Kaggle metadata API was queried for the candidate TB sets. Th
 | D9 | **Model selection on validation F1**; every reported metric is from the test split. | The test set stays an unbiased estimate of the chosen model. |
 | D10 | Class imbalance handled with `class_weight="balanced"` (Normal 1.844, Pneumonia 0.686), not resampling. | Keeps every image; the spec asks for class weights. |
 | D11 | Venv created with `--system-site-packages` from Python 3.12. | The folder sits in OneDrive; reusing the already installed, version-pinned TensorFlow 2.21 avoids syncing ~2 GB of packages. The previous `.venv` was an empty Python 3.14 environment. |
-| D12 | **Multi-class extension skipped in this run:** `KAGGLE_USERNAME` / `KAGGLE_KEY` are not set. The code is complete and was exercised end to end on stand-in folders with the real COVID-QU-Ex / TB layouts (Kermany pixels; not reported as results). | Spec rule: without credentials, finish everything else and skip the extension. Run `python -m src.data.multiclass` once the variables are set (or pass `--covidqu-dir` / `--tb-dir` for manual downloads). |
-| D13 | COVID-QU-Ex Normal / Non-COVID images partly **come from Kermany** (its dataset card lists `paultimothymooney/chest-xray-pneumonia`), resized to 256x256 PNG. The multi-class prep drops perceptual-hash (dHash, ≤6 of 64 bits) near-duplicates of Kermany images and keeps remaining near-duplicate clusters in one split. | SHA-256 cannot see a resized copy. Without this, the multi-class split would leak and the cross-dataset test would partly test on training images. |
-| D14 | Phase 3 balancing: Normal and Pneumonia take the same count from each source (capped at 1,200 per source); single-source classes (COVID, TB) up to 2,400; the split is stratified by class x source. | Stops "which dataset is this" from predicting the class within the shared classes, and keeps CPU training time reasonable. |
+| D12 | **Multi-class extension run with Kaggle data.** The credentials (env vars only) were set during the session; the downloads went through the Kaggle API, and the prep runs from the local folders (`--covidqu-dir`, `--tb-dir`). Before the real run, the whole Phase 3 code path was tested on stand-in folders with the real COVID-QU-Ex / TB layouts (not reported as results). | That test caught a flaw: a 64-bit dHash flagged most *different* chest X-rays as duplicates, so the check was replaced by thumbnail correlation (see D13). |
+| D13 | **Cross-source near-duplicate removal.** COVID-QU-Ex's dataset card lists Kermany as a source, and the TB database is from the same group. Each image gets a 32x32 mean-centred thumbnail; a correlation of r >= 0.98 with an image from a higher-priority source (Kermany > COVID-QU-Ex > TB database) means it is dropped. Remaining near-duplicate clusters are kept inside one split. | Calibrated before use: resized and re-encoded copies score r = 1.000, and different patients score at most 0.972 (400 test vs 4,658 train images). Result: **5,172 COVID-QU-Ex images are Kermany images** (1,567 Normal, 3,605 Non-COVID) and **3,472 of the 3,500 TB-database normals are COVID-QU-Ex images**. Every match is label-consistent and the sampled pairs are visually identical (`results/multiclass/near_duplicate_examples.png`). SHA-256 alone would have missed all of them. |
+| D14 | Phase 3 balancing: in Normal and Pneumonia, every source with at least 100 images contributes the same count (1,200); smaller leftovers (28 TB-database normals) are kept whole. COVID-19 (COVID-QU-Ex only) is capped at 2,400; TB keeps all 697 unique images. The split is stratified by class x source. | Stops the source from predicting the class within the shared classes, and keeps CPU training time reasonable. A first version used the smallest source count, which collapsed Normal to 84 images once the duplicates were gone; it was caught before training finished and fixed. TB comes from a single dataset, so a TB-vs-source shortcut cannot be ruled out (see the per-source accuracy). |
 
 ## Project structure
 

@@ -29,8 +29,8 @@
 
 ## REVIEW-II · Phase 3: Multi-class extension
 
-- [ ] 14. Merge COVID-QU-Ex Non-COVID infection with Kermany Pneumonia; classes Normal, Pneumonia/Non-COVID infection, COVID-19 (+ TB if a verified dataset is available).
-- [ ] 15. Shortcut mitigation: identical preprocessing, per-class source balancing, cross-split duplicate check by file hash.
+- [x] 14. Datasets: COVID-QU-Ex (`anasmohammedtahir/covidqu`, CC BY-SA 4.0; 33,920 images verified) + TB Chest X-ray Database (`tawsifurrahman/tuberculosis-tb-chest-xray-dataset`, authors' copyright, cite; 3,500 Normal + 700 TB verified); Non-COVID infection merged into PNEUMONIA -> 4 classes NORMAL / PNEUMONIA / COVID / TB.
+- [x] 15. Shortcut controls: identical CLAHE preprocessing; 3 exact + 8,644 near-duplicate copies removed (5,172 COVID-QU-Ex = Kermany images, 3,472 TB-db normals = COVID-QU-Ex images; thumbnail r >= 0.98, visually confirmed); Normal and Pneumonia balanced 1,200 per source; split stratified by class x source, grouped by patient / near-duplicate cluster; hash + cluster overlap asserted. 7,925 images, 6,339/793/793.
 - [ ] 16. Retrain baseline CNN + ResNet50 multi-class with class weights; test metrics incl. per-class P/R/F1, confusion matrix, OvR ROC-AUC in `./results/multiclass`.
 - [ ] 17. Cross-dataset test: train on some sources, test on an unseen source, report accuracy drop.
 - [ ] 18. Save multi-class model + updated class_names.json; backend + frontend use it.

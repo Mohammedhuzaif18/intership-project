@@ -1,0 +1,8 @@
+label,source,available,selected
+COVID,covidqu,11956,2400
+NORMAL,covidqu,9134,1200
+NORMAL,kermany,1579,1200
+NORMAL,tbdb,28,28
+PNEUMONIA,covidqu,7658,1200
+PNEUMONIA,kermany,4245,1200
+TB,tbdb,697,697
