@@ -18,3 +18,7 @@ To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, 
 C:\Users\mohdh\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
   self.data_adapter = data_adapters.get_data_adapter(
 Epoch 1/8
+146/146 - 236s - 2s/step - accuracy: 0.8270 - auc: 0.9043 - loss: 0.3879 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 3.2126 - learning_rate: 0.0010
+Epoch 2/8
+146/146 - 192s - 1s/step - accuracy: 0.8622 - auc: 0.9355 - loss: 0.3188 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 2.6570 - learning_rate: 0.0010
+Epoch 3/8
