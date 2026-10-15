@@ -13,7 +13,14 @@ PREPROCESS_VARIANTS = ("squash", "crop")
 PREPROCESS_VARIANT = os.environ.get("XRAY_PREPROCESS", "squash")
 if PREPROCESS_VARIANT not in PREPROCESS_VARIANTS:
     raise ValueError(f"XRAY_PREPROCESS must be one of {PREPROCESS_VARIANTS}, got {PREPROCESS_VARIANT!r}")
-_ABLATION = "" if PREPROCESS_VARIANT == "squash" else f"ablation_{PREPROCESS_VARIANT}"  # "" adds no path level
+
+
+def variant_subdir(variant: str) -> str:
+    """Output subfolder of a preprocessing variant: "" (no extra path level) for the default squash."""
+    return "" if variant == "squash" else f"ablation_{variant}"
+
+
+_ABLATION = variant_subdir(PREPROCESS_VARIANT)
 
 DATA_DIR = ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
