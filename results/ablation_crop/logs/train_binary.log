@@ -22,3 +22,25 @@ Epoch 1/8
 Epoch 2/8
 146/146 - 192s - 1s/step - accuracy: 0.8622 - auc: 0.9355 - loss: 0.3188 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 2.6570 - learning_rate: 0.0010
 Epoch 3/8
+146/146 - 184s - 1s/step - accuracy: 0.8804 - auc: 0.9480 - loss: 0.2879 - val_accuracy: 0.7290 - val_auc: 0.5000 - val_loss: 2.2843 - learning_rate: 0.0010
+Epoch 4/8
+146/146 - 178s - 1s/step - accuracy: 0.8791 - auc: 0.9496 - loss: 0.2823 - val_accuracy: 0.7839 - val_auc: 0.9508 - val_loss: 0.4245 - learning_rate: 0.0010
+Epoch 5/8
+146/146 - 180s - 1s/step - accuracy: 0.8914 - auc: 0.9592 - loss: 0.2566 - val_accuracy: 0.8748 - val_auc: 0.9391 - val_loss: 0.3217 - learning_rate: 0.0010
+Epoch 6/8
+
+Epoch 6: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+146/146 - 184s - 1s/step - accuracy: 0.8952 - auc: 0.9611 - loss: 0.2499 - val_accuracy: 0.7290 - val_auc: 0.7180 - val_loss: 0.7580 - learning_rate: 0.0010
+Epoch 7/8
+
+Epoch 7: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
+146/146 - 193s - 1s/step - accuracy: 0.9034 - auc: 0.9685 - loss: 0.2274 - val_accuracy: 0.7564 - val_auc: 0.9616 - val_loss: 0.5631 - learning_rate: 3.0000e-04
+Epoch 8/8
+146/146 - 223s - 2s/step - accuracy: 0.9139 - auc: 0.9744 - loss: 0.2045 - val_accuracy: 0.8902 - val_auc: 0.9762 - val_loss: 0.2805 - learning_rate: 9.0000e-05
+Restoring model weights from the end of the best epoch: 8.
+2026-10-15 21:22:19,656 [INFO] Baseline CNN: val F1=0.9192 | test acc=0.8971 F1=0.9242 AUC=0.9898
+2026-10-15 21:22:19,782 [INFO] ===== Training ResNet50 =====
+2026-10-15 21:22:21,250 [INFO] resnet50: phase 1, frozen backbone, 5 epochs at lr 1e-3
+C:\Users\mohdh\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/5
