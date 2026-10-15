@@ -13,3 +13,22 @@ Epoch 2/8
 Epoch 2: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
 199/199 - 257s - 1s/step - accuracy: 0.5799 - auc: 0.8205 - loss: 0.9848 - val_accuracy: 0.3039 - val_auc: 0.5520 - val_loss: 2.1888 - learning_rate: 0.0010
 Epoch 3/8
+199/199 - 264s - 1s/step - accuracy: 0.6522 - auc: 0.8724 - loss: 0.8214 - val_accuracy: 0.5977 - val_auc: 0.8351 - val_loss: 0.9892 - learning_rate: 3.0000e-04
+Epoch 4/8
+Epoch 4: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
+199/199 - 268s - 1s/step - accuracy: 0.6839 - auc: 0.8919 - loss: 0.7499 - val_accuracy: 0.3140 - val_auc: 0.5504 - val_loss: 2.8516 - learning_rate: 3.0000e-04
+Epoch 5/8
+Epoch 5: ReduceLROnPlateau reducing learning rate to 2.700000040931627e-05.
+199/199 - 305s - 2s/step - accuracy: 0.7153 - auc: 0.9060 - loss: 0.6820 - val_accuracy: 0.5044 - val_auc: 0.8099 - val_loss: 1.1941 - learning_rate: 9.0000e-05
+Epoch 6/8
+199/199 - 249s - 1s/step - accuracy: 0.7378 - auc: 0.9199 - loss: 0.6283 - val_accuracy: 0.6721 - val_auc: 0.8935 - val_loss: 0.7908 - learning_rate: 2.7000e-05
+Epoch 7/8
+199/199 - 245s - 1s/step - accuracy: 0.7336 - auc: 0.9213 - loss: 0.6207 - val_accuracy: 0.7137 - val_auc: 0.9209 - val_loss: 0.6805 - learning_rate: 2.7000e-05
+Epoch 8/8
+Epoch 8: ReduceLROnPlateau reducing learning rate to 8.100000013655517e-06.
+199/199 - 244s - 1s/step - accuracy: 0.7410 - auc: 0.9227 - loss: 0.6142 - val_accuracy: 0.5712 - val_auc: 0.8248 - val_loss: 1.1308 - learning_rate: 2.7000e-05
+Restoring model weights from the end of the best epoch: 7.
+2026-10-15 16:46:34,774 [INFO] Baseline CNN: val F1=0.7238 | test acc=0.7264 F1=0.7345 AUC=0.9337
+2026-10-15 16:46:34,987 [INFO] ===== Training ResNet50 =====
+2026-10-15 16:46:36,318 [INFO] resnet50: phase 1, frozen backbone, 5 epochs at lr 1e-3
+Epoch 1/5
