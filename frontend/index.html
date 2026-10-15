@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -36,7 +36,7 @@
     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>
     </svg>
-    <p><strong>Research prototype.</strong> Not a certified medical device. Do not use for diagnosis or treatment decisions.</p>
+    <p><strong>Educational prototype, not a diagnostic tool.</strong> Not a certified medical device; do not use it for diagnosis or treatment decisions.</p>
   </div>
 
   <main class="layout">
@@ -48,6 +48,7 @@
         <div class="toolbar" id="toolbar" hidden>
           <div class="segmented" role="radiogroup" aria-label="View mode">
             <button type="button" role="radio" data-mode="original" aria-checked="false">Original</button>
+            <button type="button" role="radio" data-mode="input" aria-checked="false" title="What the network sees: grayscale, 224x224, CLAHE">Model input</button>
             <button type="button" role="radio" data-mode="overlay" aria-checked="true">Overlay</button>
             <button type="button" role="radio" data-mode="compare" aria-checked="false">Compare</button>
           </div>
@@ -172,6 +173,6 @@
     Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
   </footer>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

@@ -1,193 +1,168 @@
-import os
-import io
-import sys
-import json
-import glob
-import random
+"""
+FastAPI service: chest X-ray classification with Grad-CAM.
+
+  uvicorn backend.main:app --host 127.0.0.1 --port 8000     # UI at http://127.0.0.1:8000
+
+GET  /health                 model status, classes, Grad-CAM layer
+POST /predict                image file -> class, confidence, all probabilities, Grad-CAM overlay (base64)
+GET  /samples/{class_name}   a random held-out test X-ray of that class (for the UI's sample buttons)
+"""
 import base64
+import io
+import os
+import random
+import sys
+from contextlib import asynccontextmanager
+from pathlib import Path
+
 import numpy as np
-from PIL import Image
+import pandas as pd
 import tensorflow as tf
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from src.gradcam import find_target_conv_layer, make_gradcam_heatmap, overlay_gradcam, colorize_heatmap
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from src.config import BEST_MODEL_PATH, CLASS_NAMES_PATH, SPLITS_DIR  # noqa: E402
+from src.data.preprocessing import preprocess_image  # noqa: E402
+from src.gradcam import GradCAM, colorize_heatmap, overlay_heatmap  # noqa: E402
+from src.utils import absolute, load_json  # noqa: E402
+
+MODEL_PATH = Path(os.environ.get("MODEL_PATH", BEST_MODEL_PATH))
+CLASS_NAMES_FILE = Path(os.environ.get("CLASS_NAMES_FILE", CLASS_NAMES_PATH))
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024
+DISCLAIMER = "Educational research prototype. Not a medical device; not for diagnosis or treatment decisions."
+
+state = {"model": None, "cam": None, "meta": None, "error": None}
+
+
+def load_model():
+    try:
+        meta = load_json(CLASS_NAMES_FILE)
+        model = tf.keras.models.load_model(MODEL_PATH)
+        outputs = model.output_shape[-1]
+        expected = 1 if len(meta["classes"]) == 2 else len(meta["classes"])
+        if outputs != expected:
+            raise ValueError(f"Model has {outputs} outputs but class_names.json lists {meta['classes']}")
+        state.update(model=model, cam=GradCAM(model, meta.get("target_layer")), meta=meta, error=None)
+        print(f"Loaded {meta['model']} ({meta['task']}) from {MODEL_PATH}; Grad-CAM layer {state['cam'].layer_name}")
+    except Exception as e:
+        state.update(model=None, cam=None, meta=None, error=f"{type(e).__name__}: {e}")
+        print(f"Model not loaded: {state['error']}")
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    load_model()
+    yield
+
 
 app = FastAPI(
-    title="Explainable AI Chest X-Ray Diagnostic Support",
-    description="FastAPI service for respiratory disorder classification with Grad-CAM visual interpretability.",
-    version="2.0.0",
+    title="Interpretable Chest X-Ray Classifier",
+    description="Respiratory disorder classification from chest X-rays with Grad-CAM explanations.",
+    version="3.0.0",
+    lifespan=lifespan,
 )
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-MODEL_PATH = os.path.abspath(os.environ.get("MODEL_PATH", "./models/best_model.keras"))
-CLASS_INDICES_PATH = os.path.abspath("./models/class_indices.json")
-# Held-out test images used by the UI's sample buttons, first match wins
-SAMPLE_DIRS = ["./data/preprocessed_224/test", "./data/processed_multiclass/test", "./data/processed/test"]
-
-model = None
-target_conv_layer_name = None
-class_names = ["NORMAL", "PNEUMONIA"]
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])
 
 
-def load_system_model():
-    global model, target_conv_layer_name, class_names
-    if os.path.exists(CLASS_INDICES_PATH):
-        try:
-            with open(CLASS_INDICES_PATH, "r") as f:
-                mapping = json.load(f)
-            if "classes" in mapping:
-                class_names = mapping["classes"]
-            else:
-                keys = sorted([k for k in mapping.keys() if str(k).isdigit()], key=lambda x: int(x))
-                class_names = [mapping[k] for k in keys]
-        except Exception as e:
-            print(f"Warning loading class indices: {e}")
-
-    if os.path.exists(MODEL_PATH):
-        try:
-            model = tf.keras.models.load_model(MODEL_PATH)
-            target_conv_layer_name = find_target_conv_layer(model)
-            print(f"Model loaded from {MODEL_PATH}. Target layer: {target_conv_layer_name}")
-        except Exception as e:
-            print(f"Error loading model from {MODEL_PATH}: {e}")
-            model = None
-    else:
-        print(f"Model file not found yet at {MODEL_PATH}.")
+@app.middleware("http")
+async def revalidate_frontend(request, call_next):
+    """Browsers must re-check the UI files, so an updated frontend is never served from a stale cache."""
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.endswith((".html", ".css", ".js")):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 
-@app.on_event("startup")
-def startup_event():
-    load_system_model()
+def _jpeg_data_url(arr: np.ndarray) -> str:
+    buf = io.BytesIO()
+    Image.fromarray(arr).save(buf, format="JPEG", quality=90)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
 @app.get("/health")
-def health_check():
-    global model
-    if model is None:
-        load_system_model()
+def health():
+    if state["model"] is None and state["error"]:
+        load_model()  # picks up a model trained after the server started
+    meta = state["meta"] or {}
     return {
-        "status": "healthy",
-        "service": "Explainable Respiratory Disorder Classifier API",
-        "model_loaded": model is not None,
-        "model_name": model.name if model is not None else None,
-        "model_path": MODEL_PATH,
-        "target_conv_layer": target_conv_layer_name,
-        "classes": class_names,
-        "num_classes": len(class_names),
-        "disclaimer": "Educational research prototype only. Not intended for clinical diagnosis.",
+        "status": "ok",
+        "model_loaded": state["model"] is not None,
+        "model": meta.get("model"),
+        "task": meta.get("task"),
+        "classes": meta.get("classes", []),
+        "display_names": meta.get("display_names", {}),
+        "target_layer": state["cam"].layer_name if state["cam"] else None,
+        "test_metrics": meta.get("test_metrics"),
+        "error": state["error"],
+        "disclaimer": DISCLAIMER,
     }
 
 
 @app.post("/predict")
-async def predict_xray(file: UploadFile = File(...)):
-    global model, target_conv_layer_name
-
-    if model is None:
-        load_system_model()
-        if model is None:
-            raise HTTPException(status_code=503, detail="Model is still training or not available.")
-
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be a valid image (JPEG/PNG).")
-
+async def predict(file: UploadFile = File(...)):
+    if state["model"] is None:
+        raise HTTPException(status_code=503, detail=f"Model not available: {state['error']}")
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty upload.")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="File larger than 20 MB.")
     try:
-        contents = await file.read()
-        pil_img = Image.open(io.BytesIO(contents)).convert("RGB")
-        img_resized = pil_img.resize((224, 224))
-        img_array = np.array(img_resized)
-        img_input = np.expand_dims(img_array, axis=0)
+        with Image.open(io.BytesIO(data)) as im:
+            im.load()
+            image = im.copy()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read the file as an image (use JPEG or PNG).")
 
-        raw_pred = model.predict(img_input, verbose=0)
-
-        if raw_pred.shape[-1] == 1:
-            pneumonia_prob = float(raw_pred[0][0])
-            normal_prob = 1.0 - pneumonia_prob
-            pred_idx = 1 if pneumonia_prob >= 0.5 else 0
-            predicted_class = class_names[pred_idx] if pred_idx < len(class_names) else ("PNEUMONIA" if pred_idx == 1 else "NORMAL")
-            confidence = pneumonia_prob if pred_idx == 1 else normal_prob
-            class_probs = {}
-            if len(class_names) >= 2:
-                class_probs[class_names[0]] = round(normal_prob, 4)
-                class_probs[class_names[1]] = round(pneumonia_prob, 4)
-            else:
-                class_probs["PNEUMONIA"] = round(pneumonia_prob, 4)
-        else:
-            probs = raw_pred[0]
-            pred_idx = int(np.argmax(probs))
-            predicted_class = class_names[pred_idx] if pred_idx < len(class_names) else str(pred_idx)
-            confidence = float(probs[pred_idx])
-            class_probs = {
-                class_names[i] if i < len(class_names) else str(i): round(float(probs[i]), 4)
-                for i in range(len(probs))
-            }
-
-        heatmap = make_gradcam_heatmap(
-            img_input,
-            model,
-            last_conv_layer_name=target_conv_layer_name,
-            pred_index=pred_idx,
-        )
-        overlay, _ = overlay_gradcam(img_array, heatmap, alpha=0.45)
-
-        overlay_b64 = _jpeg_data_url(Image.fromarray(overlay))
-        orig_b64 = _jpeg_data_url(img_resized)
-        # Bare colormap, so the UI can blend it over the original at any opacity
-        jet_rgb, _ = colorize_heatmap(heatmap, img_resized.size)
-        heatmap_b64 = _jpeg_data_url(Image.fromarray(jet_rgb))
-
-        return {
-            "success": True,
-            "filename": file.filename,
-            "predicted_class": predicted_class,
-            "confidence": round(confidence, 4),
-            "class_probabilities": class_probs,
-            "gradcam_overlay_base64": overlay_b64,
-            "heatmap_base64": heatmap_b64,
-            "original_image_base64": orig_b64,
-            "target_layer_used": target_conv_layer_name,
-            "interpretation": (
-                "Grad-CAM visual attribution: Warm regions (red, orange, yellow) indicate focal features "
-                "in the lung fields that strongly drove the network's classification decision."
-            ),
-        }
+    meta = state["meta"]
+    classes = meta["classes"]
+    model_input = preprocess_image(image)  # identical to the training preprocessing
+    try:
+        probs, heat, idx = state["cam"](model_input)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Inference error: {type(e).__name__}: {e}")
 
-
-def _jpeg_data_url(pil_img: Image.Image) -> str:
-    buf = io.BytesIO()
-    pil_img.save(buf, format="JPEG", quality=90)
-    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("utf-8")
+    size = model_input.shape[1::-1]
+    return {
+        "success": True,
+        "filename": file.filename,
+        "predicted_class": classes[idx],
+        "predicted_label": meta["display_names"].get(classes[idx], classes[idx]),
+        "confidence": round(float(probs[idx]), 4),
+        "class_probabilities": {c: round(float(p), 4) for c, p in zip(classes, probs)},
+        "display_names": meta["display_names"],
+        "gradcam_overlay_base64": _jpeg_data_url(overlay_heatmap(model_input, heat)),
+        "heatmap_base64": _jpeg_data_url(colorize_heatmap(heat, size)),
+        "model_input_base64": _jpeg_data_url(model_input),
+        "target_layer": state["cam"].layer_name,
+        "model": meta["model"],
+        "task": meta["task"],
+        "disclaimer": DISCLAIMER,
+    }
 
 
 @app.get("/samples/{class_name}")
-def sample_image(class_name: str):
-    """A random held-out test X-ray of the given class, for the UI's sample buttons."""
-    if class_name not in class_names:
+def sample(class_name: str):
+    meta = state["meta"]
+    if meta is None or class_name not in meta["classes"]:
         raise HTTPException(status_code=404, detail=f"Unknown class '{class_name}'.")
-    for base in SAMPLE_DIRS:
-        files = glob.glob(os.path.join(os.path.abspath(base), class_name, "*.*"))
-        if files:
-            path = random.choice(files)
-            return FileResponse(path, media_type="image/jpeg", filename=os.path.basename(path))
-    raise HTTPException(status_code=404, detail=f"No test images found for '{class_name}'.")
+    test_csv = SPLITS_DIR / meta["task"] / "test.csv"
+    if not test_csv.exists():
+        raise HTTPException(status_code=404, detail="No test split available.")
+    rows = pd.read_csv(test_csv, usecols=["path", "label"])
+    paths = rows.loc[rows["label"] == class_name, "path"].tolist()
+    if not paths:
+        raise HTTPException(status_code=404, detail=f"No test images for '{class_name}'.")
+    path = absolute(random.choice(paths))
+    media = "image/png" if path.suffix.lower() == ".png" else "image/jpeg"
+    return FileResponse(path, media_type=media, filename=path.name)
 
 
-frontend_path = os.path.abspath("./frontend")
-if os.path.exists(frontend_path):
-    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+frontend_dir = ROOT / "frontend"
+if frontend_dir.is_dir():
+    app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

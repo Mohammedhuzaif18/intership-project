@@ -16,11 +16,12 @@
   --danger-soft: rgba(242, 112, 107, 0.1);
   --ok: #3ecf8e;
 
-  --c-normal: #3ecf8e;
-  --c-pneumonia: #f2706b;
-  --c-covid: #f2b84b;
-  --c-tb: #a78bfa;
-  --c-other: #5aa9ff;
+  /* Categorical palette (dark-surface steps), same slot order as the report figures */
+  --c-normal: #3987e5;
+  --c-pneumonia: #d95926;
+  --c-covid: #199e70;
+  --c-tb: #c98500;
+  --c-other: #9085e9;
 
   --radius: 12px;
   --radius-sm: 8px;
@@ -289,6 +290,7 @@ button {
   color: var(--muted);
   font-size: 13px;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
@@ -375,7 +377,6 @@ button {
   align-items: flex-start;
   gap: 12px;
   padding: 14px;
-  min-height: 420px;
   border-radius: var(--radius);
   background: #000;
   border: 1px solid var(--border);
@@ -391,6 +392,8 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
 }
 
@@ -400,18 +403,21 @@ button {
 
 .stage[data-mode="compare"] .pane {
   flex: 1 1 0;
+  width: auto;
 }
 
 .stage[data-mode="compare"] .pane-compare {
   display: flex;
 }
 
-/* The base image sets the frame size; the heatmap is stretched over it exactly,
-   which matches how the API squashes the upload to 224x224 */
+/* The frame takes the displayed image's aspect ratio (set from JS) and the largest size
+   that fits; the heatmap is stretched over it exactly, which matches how the API
+   squashes the upload to 224x224 */
 .frame {
+  --aspect: 1;
   position: relative;
-  display: inline-block;
-  max-width: 100%;
+  aspect-ratio: var(--aspect);
+  width: min(100%, calc(min(64vh, 620px) * var(--aspect)));
   line-height: 0;
   border-radius: 6px;
   overflow: hidden;
@@ -419,10 +425,8 @@ button {
 
 .layer-base {
   display: block;
-  max-width: 100%;
-  max-height: min(64vh, 620px);
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
 }
 
 .layer-heat {
@@ -441,6 +445,7 @@ button {
 }
 
 .stage[data-mode="original"] .layer-heat,
+.stage[data-mode="input"] .layer-heat,
 .stage[data-mode="compare"] #imgHeat {
   display: none;
 }
@@ -694,7 +699,7 @@ button {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--class-color, var(--text));
+  color: var(--text);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -918,12 +923,21 @@ button {
 
   .toolbar {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
-  .dropzone,
-  .stage {
+  .dropzone {
     min-height: 300px;
+  }
+
+  .segmented {
+    width: 100%;
+  }
+
+  .segmented button {
+    flex: 1;
+    padding: 5px 6px;
+    font-size: 12.5px;
   }
 
   .stage {

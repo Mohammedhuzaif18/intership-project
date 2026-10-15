@@ -22,10 +22,10 @@
 
 ## REVIEW-II · Phase 2: Explainability and app
 
-- [ ] 10. Grad-CAM with programmatic target layer (`conv5_block3_out` for ResNet50); 10 test heatmaps incl. wrong predictions in `./results/gradcam`.
-- [ ] 11. FastAPI backend: CORS, `GET /health`, `POST /predict` (class, confidence, all probabilities, base64 Grad-CAM overlay); training preprocessing; class names from `class_names.json`.
-- [ ] 12. Frontend: upload, prediction, probability bars, Grad-CAM image, disclaimer.
-- [ ] 13. Integration test: start backend, send a real test image to `/predict`, confirm response; fix breakages.
+- [x] 10. Grad-CAM (`src/gradcam.py`): layer found programmatically (`conv5_block3_out` for ResNet50, `block4_out` baseline, `out_relu` MobileNetV2); 10 test images incl. 4 wrong predictions in `results/gradcam/` (+ grid); shows reliance on image borders for some cases.
+- [x] 11. FastAPI backend (`backend/main.py`): CORS, `GET /health`, `POST /predict` (class, confidence, all probabilities, base64 Grad-CAM overlay + heatmap + model input), `GET /samples/{class}`; shared preprocessing; classes from `models/class_names.json`.
+- [x] 12. Frontend (`frontend/`): upload/drag-drop, real test-image samples, prediction + probability bars, Grad-CAM overlay with opacity and Original / Model input / Overlay / Compare views, disclaimer; checked in the browser at desktop and phone widths.
+- [x] 13. Integration test (`tests/test_integration.py`) passes: starts uvicorn, real test images give the same class and probabilities as the offline evaluation, non-image -> 400, samples and frontend served. Fixed during testing: stale cached UI files (no-cache header + versioned assets), viewer sizing.
 
 ## REVIEW-II · Phase 3: Multi-class extension
 

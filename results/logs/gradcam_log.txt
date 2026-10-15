@@ -1,0 +1,3 @@
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-15 15:44:35,515 [INFO] Grad-CAM on ResNet50 at layer conv5_block3_out
+2026-10-15 15:44:49,382 [INFO] Saved 10 Grad-CAM figures (4 wrong) to C:\Users\mohdh\OneDrive\Desktop\intership\results\gradcam
