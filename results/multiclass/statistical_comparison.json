@@ -1,0 +1,97 @@
+{
+  "Baseline CNN": {
+    "correct": 576,
+    "n": 793,
+    "accuracy": 0.7264,
+    "ci95": [
+      0.6943,
+      0.7562
+    ]
+  },
+  "ResNet50": {
+    "correct": 653,
+    "n": 793,
+    "accuracy": 0.8235,
+    "ci95": [
+      0.7954,
+      0.8484
+    ]
+  },
+  "mcnemar_exact": {
+    "resnet_right_baseline_wrong": 140,
+    "baseline_right_resnet_wrong": 63,
+    "p_value": 6.76e-08
+  },
+  "resnet50_accuracy_by_class_and_source": [
+    {
+      "class": "COVID",
+      "source": "covidqu",
+      "n": 240,
+      "accuracy": 0.7833,
+      "ci95": [
+        0.727,
+        0.8308
+      ]
+    },
+    {
+      "class": "NORMAL",
+      "source": "covidqu",
+      "n": 120,
+      "accuracy": 0.8333,
+      "ci95": [
+        0.7565,
+        0.8894
+      ]
+    },
+    {
+      "class": "NORMAL",
+      "source": "kermany",
+      "n": 120,
+      "accuracy": 0.9083,
+      "ci95": [
+        0.8433,
+        0.948
+      ]
+    },
+    {
+      "class": "NORMAL",
+      "source": "tbdb",
+      "n": 3,
+      "accuracy": 0.3333,
+      "ci95": [
+        0.0615,
+        0.7923
+      ]
+    },
+    {
+      "class": "PNEUMONIA",
+      "source": "covidqu",
+      "n": 120,
+      "accuracy": 0.7,
+      "ci95": [
+        0.6128,
+        0.7747
+      ]
+    },
+    {
+      "class": "PNEUMONIA",
+      "source": "kermany",
+      "n": 120,
+      "accuracy": 0.875,
+      "ci95": [
+        0.804,
+        0.9228
+      ]
+    },
+    {
+      "class": "TB",
+      "source": "tbdb",
+      "n": 70,
+      "accuracy": 0.9429,
+      "ci95": [
+        0.8621,
+        0.9776
+      ]
+    }
+  ]
+}

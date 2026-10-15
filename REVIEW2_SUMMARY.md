@@ -69,4 +69,78 @@ Result: **all checks pass.** Fixed during testing:
 - Browsers kept serving the previous UI from cache. The API now sends `Cache-Control: no-cache` for UI files, and the asset links are versioned.
 - The Model input view was drawn at 224 px. The frames are now sized from each image's aspect ratio.
 
-<!-- PHASE3 -->
+## 3. Multi-class extension (Normal, Pneumonia/Non-COVID infection, COVID-19, TB)
+
+### Data
+
+| Source | Kaggle slug | License | Classes used |
+|---|---|---|---|
+| Kermany (Review-I, cleaned) | n/a (Hugging Face mirror) | CC BY 4.0 | Normal, Pneumonia |
+| COVID-QU-Ex | `anasmohammedtahir/covidqu` | CC BY-SA 4.0 | Normal, Non-COVID infection (merged into Pneumonia), COVID-19 |
+| TB Chest X-ray Database | `tawsifurrahman/tuberculosis-tb-chest-xray-dataset` | (c) original authors, research use with citation | Normal, Tuberculosis |
+
+**Chosen TB dataset:** the Tuberculosis (TB) Chest X-ray Database (Rahman et al., IEEE Access 2020). It was verified through the Kaggle metadata API and after download: `Normal` (3,500) and `Tuberculosis` (700) folders, matching its card. It was picked over the only CC-licensed alternative because its provenance is documented and peer-reviewed. Classes were also verified for COVID-QU-Ex: 11,956 COVID-19, 11,263 Non-COVID and 10,701 Normal images in `Lung Segmentation Data`; the Infection Segmentation subset repeats the same images, so it is not used.
+
+**Cross-source duplicates.** COVID-QU-Ex lists Kermany among its sources, and the TB database is from the same group, so exact (SHA-256) and near-duplicate checks were run across all three. Near-duplicates are defined as a 32x32 mean-centred thumbnail correlation r >= 0.98, calibrated so that resized copies score r = 1.000 while different patients score at most 0.972. Results:
+
+- **5,172 COVID-QU-Ex images are Kermany images** (1,567 Normal, 3,605 Non-COVID), stored as 256x256 PNGs.
+- **3,472 of the 3,500 TB-database normals are COVID-QU-Ex normals**, stored at 512x512.
+- 3 exact duplicates inside the TB set.
+
+Every match is label-consistent, and the sampled pairs are pixel-for-pixel the same image (`results/multiclass/near_duplicate_examples.png`). The lower-priority copy is dropped (Kermany > COVID-QU-Ex > TB database). Without this step the split would leak, and a "cross-dataset" test would largely re-test training images.
+
+**Shortcut controls and split.**
+
+- Identical CLAHE preprocessing for every source.
+- In Normal and Pneumonia, each source with at least 100 images contributes 1,200 images; the 28 unique TB-database normals are kept whole.
+- COVID-19 is capped at 2,400; TB keeps all 697 unique images.
+- The split is 80/10/10, stratified by class x source, and grouped by patient (Kermany) or near-duplicate cluster (7,449 groups). Hash and cluster overlap across splits are asserted.
+
+| Class | Train | Val | Test | Sources (per split, train) |
+|---|---|---|---|---|
+| Normal | 1,942 | 243 | 243 | Kermany 960, COVID-QU-Ex 960, TB database 22 |
+| Pneumonia / Non-COVID infection | 1,920 | 240 | 240 | Kermany 960, COVID-QU-Ex 960 |
+| COVID-19 | 1,920 | 240 | 240 | COVID-QU-Ex |
+| Tuberculosis | 557 | 70 | 70 | TB database |
+| **Total** | **6,339** | **793** | **793** | |
+
+### Results (held-out test set, n = 793)
+
+Both models were retrained with the Review-I protocol (class weights; ResNet50 5 frozen + 3 fine-tune epochs, BatchNorm frozen) and selected on validation macro F1.
+
+| Model | Accuracy (95% CI) | Macro precision | Macro recall | Macro F1 | Macro OvR ROC-AUC |
+|---|---|---|---|---|---|
+| Baseline CNN | 72.6% (69.4–75.6) | 0.813 | 0.712 | 0.734 | 0.934 |
+| **ResNet50** (selected) | **82.4%** (79.5–84.8) | **0.847** | **0.845** | **0.844** | **0.962** |
+
+ResNet50 is significantly better here (exact McNemar p = 7e-8; 140 vs 63 discordant images). The baseline over-predicts COVID-19: recall 0.96 but precision 0.59, and 72 normals labelled COVID-19.
+
+Per class, ResNet50 on the test set:
+
+| Class | Precision | Recall | F1 | OvR ROC-AUC | Support |
+|---|---|---|---|---|---|
+| Normal | 0.761 | 0.864 | 0.809 | 0.945 | 243 |
+| Pneumonia / Non-COVID infection | 0.801 | 0.788 | 0.794 | 0.935 | 240 |
+| COVID-19 | 0.895 | 0.783 | 0.836 | 0.968 | 240 |
+| Tuberculosis | 0.930 | 0.943 | 0.936 | 0.999 | 70 |
+
+Confusion matrix (rows true, columns predicted: N, P, C, TB): N [210, 20, 8, 5], P [40, 189, 11, 0], C [25, 27, 188, 0], TB [1, 0, 3, 66]. Most errors are Pneumonia <-> Normal and COVID-19 -> Pneumonia/Normal, the clinically hard boundaries.
+
+**Source effect within a class** (ResNet50 test accuracy, 95% CI):
+
+| Class | Kermany | COVID-QU-Ex |
+|---|---|---|
+| Normal | 90.8% (84.3–94.8) | 83.3% (75.7–88.9) |
+| Pneumonia / Non-COVID | 87.5% (80.4–92.3) | **70.0%** (61.3–77.5) |
+
+For the same label, the model is much better on Kermany's pediatric single-centre images than on COVID-QU-Ex's adult multi-centre ones. The Pneumonia gap is outside both confidence intervals. **TB's near-perfect AUC (0.999) should not be read as solved TB detection:** every TB image comes from one dataset, so the model can partly recognise that dataset's look; this data cannot separate the two.
+
+**Grad-CAM, multi-class** (`results/multiclass/gradcam/`):
+
+- **Plausible:** the COVID-19 case highlights bilateral lung opacities, and the TB case highlights the left upper lobe, a typical TB site.
+- **Shortcuts:** a COVID-19 image misread as Pneumonia has its peak on a burned-in "D" side marker, and other errors sit on the borders or mediastinum.
+
+The multi-class ResNet50 is now the model the app serves (`models/best_model.keras` + `models/class_names.json`); the UI picks up the four class names from the API.
+
+<!-- CROSS -->
+

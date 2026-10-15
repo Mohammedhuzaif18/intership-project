@@ -1,0 +1,15 @@
+2026-10-15 17:28:41,203 [INFO] Fixed random seed set to: 42
+2026-10-15 17:31:12,362 [INFO] Reverse direction: training ResNet50 on 1920 COVID-QU-Ex images
+2026-10-15 17:31:12,537 [INFO] Class weights: {'NORMAL': 1.0, 'PNEUMONIA': 1.0}
+2026-10-15 17:31:15,100 [INFO] resnet50: phase 1, frozen backbone, 5 epochs at lr 1e-3
+Epoch 1/5
+60/60 - 114s - 2s/step - accuracy: 0.7698 - auc: 0.8285 - loss: 0.5338 - val_accuracy: 0.8042 - val_auc: 0.8884 - val_loss: 0.4248 - learning_rate: 0.0010
+Epoch 2/5
+60/60 - 89s - 1s/step - accuracy: 0.8427 - auc: 0.9139 - loss: 0.3647 - val_accuracy: 0.8208 - val_auc: 0.9014 - val_loss: 0.3788 - learning_rate: 0.0010
+Epoch 3/5
+Epoch 3: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+60/60 - 134s - 2s/step - accuracy: 0.8443 - auc: 0.9097 - loss: 0.3709 - val_accuracy: 0.8208 - val_auc: 0.9025 - val_loss: 0.4421 - learning_rate: 0.0010
+Epoch 4/5
+Epoch 4: ReduceLROnPlateau reducing learning rate to 9.000000427477062e-05.
+60/60 - 79s - 1s/step - accuracy: 0.8562 - auc: 0.9265 - loss: 0.3373 - val_accuracy: 0.8375 - val_auc: 0.8961 - val_loss: 0.3869 - learning_rate: 3.0000e-04
+Epoch 5/5

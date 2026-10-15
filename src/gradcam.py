@@ -4,6 +4,7 @@ Grad-CAM (Selvaraju et al., 2017) and the Review-II heatmap report.
   python -m src.gradcam [--task binary|multiclass]   # 10 test images -> results/gradcam
 """
 import argparse
+import textwrap
 
 import cv2
 import numpy as np
@@ -98,10 +99,15 @@ def _pick_samples(preds: pd.DataFrame, class_names, n_total=10, n_wrong=4, seed=
                   .sort_values("conf", ascending=False).head(n_wrong))
     n_correct = n_total - len(wrong_pick)
     correct = preds[preds["true"] == preds["pred"]]
-    per_class = max(1, n_correct // len(class_names))
+    per_class = max(1, -(-n_correct // len(class_names)))  # ceil, so the slots are filled
     correct_pick = pd.concat([g.sample(min(per_class, len(g)), random_state=seed)
                               for _, g in correct.groupby("true")])
-    picks = pd.concat([correct_pick, wrong_pick]).head(n_total)
+    # Trim round-robin across classes, then show the cases in class order
+    correct_pick = (correct_pick.assign(_rank=correct_pick.groupby("true").cumcount())
+                    .sort_values("_rank", kind="stable").head(n_correct)
+                    .assign(_order=lambda d: d["true"].map({c: i for i, c in enumerate(class_names)}))
+                    .sort_values(["_order", "_rank"], kind="stable").drop(columns=["_rank", "_order"]))
+    picks = pd.concat([correct_pick, wrong_pick])
     return picks.reset_index(drop=True)
 
 
@@ -151,7 +157,8 @@ def report(task: str = "binary"):
     fig, axes = plt.subplots(int(np.ceil(len(tiles) / cols)), cols, figsize=(3.1 * cols, 3.6 * np.ceil(len(tiles) / cols)))
     for ax, (over, title, correct) in zip(np.ravel(axes), tiles):
         ax.imshow(over)
-        ax.set_title(title.replace(" | ", "\n"), fontsize=8, color="#0b0b0b" if correct else "#c0302f")
+        lines = [textwrap.fill(part, 30) for part in title.split(" | ")]
+        ax.set_title("\n".join(lines), fontsize=8, color="#0b0b0b" if correct else "#c0302f")
         ax.axis("off")
     for ax in np.ravel(axes)[len(tiles):]:
         ax.axis("off")
