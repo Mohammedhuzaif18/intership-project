@@ -22,3 +22,20 @@ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF
 2026-10-15 17:59:56,584 [INFO] Verification passed: no 'group' appears in more than one split.
 2026-10-15 17:59:56,601 [INFO] Verification passed: no 'sha256' appears in more than one split.
 2026-10-15 18:00:30,072 [INFO] Preprocessing 5824 images (variant=crop, CLAHE clip=2.0, tiles=(8, 8), size=(224, 224)) with 8 threads ...
+2026-10-15 18:01:53,664 [INFO] Preprocessing finished.
+2026-10-15 18:01:53,698 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\ablation_crop\binary\train.csv (4658 rows)
+2026-10-15 18:01:53,714 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\ablation_crop\binary\val.csv (583 rows)
+2026-10-15 18:01:53,732 [INFO] Saved C:\Users\mohdh\OneDrive\Desktop\intership\splits\ablation_crop\binary\test.csv (583 rows)
+2026-10-15 18:01:53,798 [INFO] Class counts per split:
+       NORMAL  PNEUMONIA  total  patients  bacteria  normal  virus
+split                                                             
+train    1263       3395   4658      2490      2208    1263   1187
+val       158        425    583       313       276     158    149
+test      158        425    583       314       276     158    149
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792067588.844178    4156 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792067607.878179    4156 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1792067618.842988    4156 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-15 18:03:42,021 [INFO] Data preparation complete.

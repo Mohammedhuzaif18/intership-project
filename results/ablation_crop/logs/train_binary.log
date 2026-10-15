@@ -1,0 +1,20 @@
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792067661.588802   23736 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1792067667.029458   23736 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-15 18:04:51,251 [INFO] Fixed random seed set to: 42
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 18:04:51,251 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+2026-10-15 18:04:51,251 [INFO] No GPU detected. Running on CPU.
+2026-10-15 18:04:51,251 [INFO] Task=binary device=CPU backbone=resnet50 preprocessing=crop quick=False
+2026-10-15 18:04:51,537 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-15 18:04:51,562 [INFO] Verification passed: no 'patient_id' appears in more than one split.
+2026-10-15 18:04:51,562 [INFO] Classes: ['NORMAL', 'PNEUMONIA']; train/val/test = 4658/583/583
+I0000 00:00:1792067692.027638   23736 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-10-15 18:04:52,934 [INFO] Class weights: {'NORMAL': 1.844, 'PNEUMONIA': 0.686}
+2026-10-15 18:04:52,934 [INFO] ===== Training Baseline CNN =====
+2026-10-15 18:04:53,654 [INFO] Baseline CNN: 422,881 parameters
+C:\Users\mohdh\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\trainers\epoch_iterator.py:74: UserWarning: `shuffle=True` was passed, but will be ignored since the data `x` was provided as a tf.data.Dataset. The Dataset is expected to already be shuffled (via `.shuffle(buffer_size)`).
+  self.data_adapter = data_adapters.get_data_adapter(
+Epoch 1/8

@@ -1,0 +1,64 @@
+{
+  "quality_check": {
+    "images_found": 5856,
+    "corrupt_removed": 0,
+    "exact_duplicates_removed": 32,
+    "conflicting_duplicates_removed": 0,
+    "images_kept": 5824,
+    "image_modes": {
+      "L": 5541,
+      "RGB": 283
+    }
+  },
+  "subtype_counts": {
+    "NORMAL/normal": 1579,
+    "PNEUMONIA/bacteria": 2760,
+    "PNEUMONIA/virus": 1485
+  },
+  "patients": 3117,
+  "unparsed_patient_ids": 0,
+  "split_counts": [
+    {
+      "split": "train",
+      "NORMAL": 1263,
+      "PNEUMONIA": 3395,
+      "total": 4658,
+      "patients": 2490,
+      "bacteria": 2208,
+      "normal": 1263,
+      "virus": 1187
+    },
+    {
+      "split": "val",
+      "NORMAL": 158,
+      "PNEUMONIA": 425,
+      "total": 583,
+      "patients": 313,
+      "bacteria": 276,
+      "normal": 158,
+      "virus": 149
+    },
+    {
+      "split": "test",
+      "NORMAL": 158,
+      "PNEUMONIA": 425,
+      "total": 583,
+      "patients": 314,
+      "bacteria": 276,
+      "normal": 158,
+      "virus": 149
+    }
+  ],
+  "image_size_summary": {
+    "width_median": 1280.0,
+    "height_median": 886.0,
+    "width_range": [
+      384,
+      2916
+    ],
+    "height_range": [
+      127,
+      2713
+    ]
+  }
+}
