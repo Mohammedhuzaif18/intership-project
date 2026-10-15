@@ -1,0 +1,15 @@
+2026-10-15 16:11:10,618 [INFO] Fixed random seed set to: 42
+2026-10-15 16:11:10,640 [INFO] No GPU detected. Running on CPU.
+2026-10-15 16:11:10,640 [INFO] Task=multiclass device=CPU backbone=resnet50 quick=False
+2026-10-15 16:11:10,732 [INFO] Verification passed: no 'sha256' appears in more than one split.
+2026-10-15 16:11:10,737 [INFO] Verification passed: no 'patient_id' appears in more than one split.
+2026-10-15 16:11:10,737 [INFO] Classes: ['NORMAL', 'PNEUMONIA', 'COVID', 'TB']; train/val/test = 6339/793/793
+2026-10-15 16:11:11,333 [INFO] Class weights: {'NORMAL': 0.816, 'PNEUMONIA': 0.825, 'COVID': 0.825, 'TB': 2.845}
+2026-10-15 16:11:11,333 [INFO] ===== Training Baseline CNN =====
+2026-10-15 16:11:11,564 [INFO] Baseline CNN: 423,268 parameters
+Epoch 1/8
+199/199 - 278s - 1s/step - accuracy: 0.4777 - auc: 0.7286 - loss: 1.1939 - val_accuracy: 0.2963 - val_auc: 0.5534 - val_loss: 2.0228 - learning_rate: 0.0010
+Epoch 2/8
+Epoch 2: ReduceLROnPlateau reducing learning rate to 0.0003000000142492354.
+199/199 - 257s - 1s/step - accuracy: 0.5799 - auc: 0.8205 - loss: 0.9848 - val_accuracy: 0.3039 - val_auc: 0.5520 - val_loss: 2.1888 - learning_rate: 0.0010
+Epoch 3/8
