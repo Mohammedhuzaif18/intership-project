@@ -164,7 +164,7 @@ def test_metrics() -> dict:
                 "Model": name, "Comparison": f"{b} - {a}", "Accuracy change": right[b].mean() - right[a].mean(),
                 "Accuracy change 95% CI": fmt_ci(bootstrap_ci(groups, lambda i: right[b][i].mean()
                                                               - right[a][i].mean())),
-                f"Only {a} right": only_a, f"Only {b} right": only_b,
+                "Only the other pipeline right": only_a, f"Only {b} right": only_b,
                 "McNemar exact p": binomtest(min(only_a, only_b), only_a + only_b).pvalue if only_a + only_b else 1.0,
                 "ROC-AUC change": _auc(y, probs[b][:, 1]) - _auc(y, probs[a][:, 1]),
                 "AUC change 95% CI": fmt_ci(bootstrap_ci(groups, lambda i: _auc(y[i], probs[b][i, 1])
@@ -276,7 +276,8 @@ def prepared_lungbox(dataset: str, its: pd.DataFrame) -> list:
     """_prepare_lungbox for every image of a dataset, cached in CACHE_DIR (git-ignored)."""
     path = CACHE_DIR / f"{dataset.replace(' ', '_')}.npz"
     if path.exists():
-        z = np.load(path, allow_pickle=False)
+        with np.load(path, allow_pickle=False) as npz:
+            z = {k: npz[k] for k in npz.files}  # npz[k] re-reads the whole array on every access
         if z["paths"].tolist() == its["path"].tolist():
             logger.info(f"{dataset}: lungbox inputs from {path}")
             return [{"input": z["inputs"][i], "fallback": bool(z["fallback"][i]),

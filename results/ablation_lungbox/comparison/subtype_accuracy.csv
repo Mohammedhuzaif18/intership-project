@@ -1,0 +1,19 @@
+model,subtype,n,correct,accuracy,preprocessing
+Baseline CNN,bacteria,276,275,0.9963768115942028,squash
+Baseline CNN,normal,158,129,0.8164556962025317,squash
+Baseline CNN,virus,149,145,0.9731543624161074,squash
+ResNet50,bacteria,276,271,0.9818840579710144,squash
+ResNet50,normal,158,146,0.9240506329113924,squash
+ResNet50,virus,149,141,0.9463087248322148,squash
+Baseline CNN,bacteria,276,250,0.9057971014492754,crop
+Baseline CNN,normal,158,157,0.9936708860759492,crop
+Baseline CNN,virus,149,116,0.7785234899328859,crop
+ResNet50,bacteria,276,267,0.967391304347826,crop
+ResNet50,normal,158,145,0.9177215189873418,crop
+ResNet50,virus,149,134,0.8993288590604027,crop
+Baseline CNN,bacteria,276,253,0.9166666666666666,lungbox
+Baseline CNN,normal,158,152,0.9620253164556962,lungbox
+Baseline CNN,virus,149,128,0.8590604026845637,lungbox
+ResNet50,bacteria,276,266,0.9637681159420288,lungbox
+ResNet50,normal,158,135,0.8544303797468354,lungbox
+ResNet50,virus,149,129,0.8657718120805369,lungbox

@@ -1,12 +1,12 @@
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1792092509.573613   20820 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+I0000 00:00:1792114161.183172   12908 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
 WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
-I0000 00:00:1792092519.607800   20820 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
-2026-10-16 00:58:49,190 [INFO] Fixed random seed set to: 42
-2026-10-16 00:58:49,926 [INFO] 5172 Kermany images have a COVID-QU-Ex lung mask
-2026-10-16 00:58:50,296 [INFO] Kermany test: lungbox preprocessing of 583 images (517 with masks)
-I0000 00:00:1792092530.396710   11608 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+I0000 00:00:1792114189.989382   12908 port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2026-10-16 07:00:09,882 [INFO] Fixed random seed set to: 42
+2026-10-16 07:00:12,238 [INFO] 5172 Kermany images have a COVID-QU-Ex lung mask
+2026-10-16 07:00:13,141 [INFO] Kermany test: lungbox inputs from C:\Users\mohdh\OneDrive\Desktop\intership\data\preprocessed\ablation_lungbox\comparison_cache\Kermany_test.npz
+2026-10-16 07:00:23,710 [INFO] COVID-QU-Ex unseen: lungbox preprocessing of 2400 images (2400 with masks)
+I0000 00:00:1792114223.855968   15020 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: SSE3 SSE4.1 SSE4.2 AVX AVX2 AVX_VNNI FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
-2026-10-16 00:58:51,669 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
-2026-10-16 01:01:14,997 [INFO] COVID-QU-Ex unseen: lungbox preprocessing of 2400 images (2400 with masks)
+2026-10-16 07:00:25,889 [WARNING] TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
