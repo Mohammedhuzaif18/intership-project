@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=10">
 </head>
 <body class="report-page">
 
@@ -28,6 +28,11 @@
       <div class="status" id="status" data-state="checking" role="status" aria-live="polite">
         <span class="status-dot"></span>
         <span id="statusText">Connecting to model…</span>
+      </div>
+      <a class="btn account-link" id="accountLink" href="auth.html">Sign in / register</a>
+      <div class="account-session" id="accountSession" hidden>
+        <span id="accountName"></span>
+        <button class="btn" type="button" id="signOutBtn">Sign out</button>
       </div>
     </div>
   </header>
@@ -67,6 +72,7 @@
           <dl class="kv patient-kv">
             <dt>Name</dt><dd id="patientName">—</dd>
             <dt>Age</dt><dd id="patientAge">—</dd>
+            <dt>Patient ID</dt><dd id="patientId">—</dd>
             <dt>Image</dt><dd id="imageName">—</dd>
             <dt>Analysed</dt><dd id="analysedAt">—</dd>
           </dl>
@@ -76,6 +82,13 @@
           <div class="panel-head"><h2>Not a chest X-ray</h2></div>
           <p>This tool only analyses chest X-rays. The uploaded image does not look like one, so no disease result, probabilities or heatmap is given.</p>
           <p class="muted" id="notChestScore"></p>
+        </section>
+
+        <section class="panel report-quality" id="reportQuality" hidden>
+          <div class="panel-head"><h2>Technical image quality</h2></div>
+          <p class="quality-summary" id="qualitySummary"></p>
+          <ul id="qualityIssues"></ul>
+          <p class="muted" id="qualityDisclaimer"></p>
         </section>
 
         <section class="panel">
@@ -104,6 +117,13 @@
             <h3>Class probabilities</h3>
             <ul class="probs" id="probBars"></ul>
           </div>
+        </section>
+
+        <section class="panel doctor-review-panel" id="doctorReviewPanel" hidden>
+          <div class="panel-head"><h2>Doctor review</h2></div>
+          <p id="doctorReviewStatus" class="muted">This is the AI result. You can view it without requesting a doctor review.</p>
+          <button type="button" class="btn btn-primary" id="requestDoctorReviewBtn">Request doctor review</button>
+          <div id="doctorReviewDetails" hidden></div>
         </section>
 
         <section class="panel about-disease" id="aboutDisease">
@@ -161,6 +181,11 @@
           </div>
         </section>
 
+        <section class="panel patient-comparison" id="automaticComparison" hidden>
+          <div class="panel-head"><h2>Same-patient visual comparison</h2></div>
+          <div id="automaticComparisonContent"></div>
+        </section>
+
         <details class="panel details">
           <summary>Technical details</summary>
           <dl class="kv" id="techDetails"></dl>
@@ -180,7 +205,7 @@
     Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
   </footer>
 
-  <script src="common.js?v=7"></script>
-  <script src="results.js?v=7"></script>
+  <script src="common.js?v=10"></script>
+  <script src="results.js?v=10"></script>
 </body>
 </html>

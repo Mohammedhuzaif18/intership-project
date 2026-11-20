@@ -45,6 +45,29 @@ const DISEASE_INFO = {
 document.addEventListener('DOMContentLoaded', () => {
   const $ = (id) => document.getElementById(id);
   const { colorFor, fmtPct, labelFor } = PulmoScan;
+  const authToken = () => sessionStorage.getItem('pulmoscan:auth-token');
+
+  const accountToken = authToken();
+  if (accountToken) {
+    fetch(`${PulmoScan.API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${accountToken}` } })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.user?.role !== 'PATIENT') throw new Error('Please sign in again.');
+        $('accountName').textContent = `Signed in: ${data.user.full_name}`;
+        $('accountLink').hidden = true;
+        $('accountSession').hidden = false;
+      })
+      .catch(() => {
+        sessionStorage.removeItem('pulmoscan:auth-token');
+        sessionStorage.removeItem('pulmoscan:auth-user');
+        window.location.replace('auth.html');
+      });
+  }
+  $('signOutBtn').addEventListener('click', () => {
+    sessionStorage.removeItem('pulmoscan:auth-token');
+    sessionStorage.removeItem('pulmoscan:auth-user');
+    window.location.replace('auth.html');
+  });
 
   PulmoScan.watchStatus();
 
@@ -54,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
   const { patient, image, result, groundTruth } = record;
+
+  if (accountToken && result.prediction_id) {
+    configureDoctorReview(result.prediction_id, accountToken);
+  }
   PulmoScan.setDisplayNames(result.display_names);
   $('report').hidden = false;
 
@@ -70,8 +97,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('patientName').textContent = patient.name;
   $('patientAge').textContent = ageText;
+  $('patientId').textContent = patient.patientId || 'Not stored';
   $('imageName').textContent = `${image.name} · ${image.sizeKB} KB`;
   $('analysedAt').textContent = whenText;
+
+  if (result.quality) {
+    const quality = result.quality;
+    const qualityPanel = $('reportQuality');
+    qualityPanel.hidden = false;
+    qualityPanel.classList.add(`quality-${quality.status}`);
+    $('qualitySummary').textContent = quality.status === 'pass'
+      ? 'Technical image checks passed.'
+      : quality.status === 'review'
+        ? 'Image framing may need review.'
+        : 'Image quality checks failed.';
+    [...(quality.warnings || []), ...(quality.suggestions || [])].forEach((message) => {
+      const item = document.createElement('li');
+      item.textContent = message;
+      $('qualityIssues').append(item);
+    });
+    $('qualityDisclaimer').textContent = quality.disclaimer || '';
+  }
 
   function fillDetails(rows) {
     rows.forEach(([k, v]) => {
@@ -94,7 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fillDetails([
       ['Model', result.model || '—'],
       ['Chest X-ray check', `Not passed (similarity ${Number(result.chest_score).toFixed(2)}, threshold ${Number(result.chest_threshold).toFixed(2)})`],
-      ['Data sent to server', 'Image only (name and age stay in this browser)'],
+      ['Technical image quality', result.quality ? result.quality.status : 'Not available'],
+      ['Data sent to server', result.prediction_id ? 'Image and account Patient ID (name and age stay in this browser)' : 'Image only (name, age and Patient ID stay in this browser)'],
     ]);
     $('printBtn').addEventListener('click', () => window.print());
     return;
@@ -201,14 +248,121 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Technical details and actions ----------
 
+  if (result.patient_record && result.patient_record.previous_record_id) {
+    const panel = $('automaticComparison');
+    const params = new URLSearchParams({
+      record_a_id: result.patient_record.previous_record_id,
+      record_b_id: result.patient_record.record_id,
+    });
+    fetch(`${PulmoScan.API_BASE}/patients/${encodeURIComponent(result.patient_record.patient_id)}/compare?${params}`, {
+      headers: sessionStorage.getItem('pulmoscan:auth-token')
+        ? { Authorization: `Bearer ${sessionStorage.getItem('pulmoscan:auth-token')}` }
+        : {},
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : `Request failed (${response.status})`);
+        $('automaticComparisonContent').append(PulmoScan.createComparisonView(data));
+        panel.hidden = false;
+      })
+      .catch((error) => {
+        $('automaticComparisonContent').textContent = `The previous record could not be compared: ${error.message}`;
+        panel.hidden = false;
+      });
+  }
+
   fillDetails([
     ['Model', result.model || '—'],
     ['Task', result.task === 'binary' ? 'Normal vs Pneumonia' : `${probs.length}-class`],
     ['Grad-CAM layer', result.target_layer || '—'],
     ['Preprocessing', 'Grayscale → 224×224 → CLAHE'],
     ['Chest X-ray check', result.chest_score == null ? 'Not run' : `Passed (similarity ${Number(result.chest_score).toFixed(2)})`],
-    ['Data sent to server', 'Image only (name and age stay in this browser)'],
+    ['Technical image quality', result.quality ? result.quality.status : 'Not available'],
+    ['Data sent to server', 'Image and Patient ID (name and age stay in this browser)'],
   ]);
 
   $('printBtn').addEventListener('click', () => window.print());
+
+  function configureDoctorReview(predictionId, token) {
+    const panel = $('doctorReviewPanel');
+    const status = $('doctorReviewStatus');
+    const details = $('doctorReviewDetails');
+    const requestButton = $('requestDoctorReviewBtn');
+    panel.hidden = false;
+
+    async function refreshReview() {
+      const response = await fetch(
+        `${PulmoScan.API_BASE}/auth/patient/predictions/${encodeURIComponent(predictionId)}/report`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      const report = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const detail = typeof report.detail === 'string' ? report.detail : `Request failed (${response.status})`;
+        throw new Error(detail);
+      }
+
+      const reviewRequest = report.review_request;
+      requestButton.hidden = Boolean(reviewRequest);
+      details.replaceChildren();
+      details.hidden = !report.doctor_reviewed_report;
+      if (!reviewRequest) {
+        status.textContent = 'AI-only report. It has not been reviewed by a doctor. You can request a review or use this result as-is.';
+        return false;
+      }
+      if (reviewRequest.status !== 'COMPLETED') {
+        status.textContent = `Doctor review status: ${reviewRequest.status.replace('_', ' ')}. Your AI result above remains unchanged.`;
+        return true;
+      }
+
+      status.textContent = 'Doctor review completed. The AI prediction above is preserved as the original result.';
+      const review = report.doctor_reviewed_report;
+      const heading = document.createElement('h3');
+      heading.textContent = `Doctor decision: ${review.decision}`;
+      const attribution = document.createElement('p');
+      attribution.textContent = `Reviewed by ${review.doctor_name} on ${new Date(review.reviewed_at).toLocaleString()}.`;
+      const observations = document.createElement('p');
+      observations.textContent = `Observations: ${review.observations}`;
+      const comments = document.createElement('p');
+      comments.textContent = `Comments: ${review.comments || 'None provided.'}`;
+      details.append(heading, attribution, observations, comments);
+      return false;
+    }
+
+    requestButton.addEventListener('click', async () => {
+      requestButton.disabled = true;
+      status.textContent = 'Sending doctor review request…';
+      try {
+        const response = await fetch(
+          `${PulmoScan.API_BASE}/auth/patient/predictions/${encodeURIComponent(predictionId)}/review-request`,
+          { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(typeof data.detail === 'string' ? data.detail : `Request failed (${response.status})`);
+        }
+        await refreshReview();
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        requestButton.disabled = false;
+      }
+    });
+
+    const poll = async () => {
+      try {
+        const pending = await refreshReview();
+        if (!pending) clearInterval(polling);
+      } catch (error) {
+        status.textContent = `Could not refresh review status: ${error.message}`;
+        clearInterval(polling);
+      }
+    };
+
+    let polling = null;
+    refreshReview()
+      .then((pending) => {
+        if (pending) polling = setInterval(poll, 12000);
+      })
+      .catch((error) => { status.textContent = error.message; });
+  }
 });

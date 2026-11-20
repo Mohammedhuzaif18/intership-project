@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>PulmoScan · Patient and doctor portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=11">
+</head>
+<body class="auth-page">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="auth.html">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3v8"/><path d="M12 9c-1.5-1-3-1.4-4.5-1C5 8.5 4 12 4 15.5 4 18.5 5.5 20 7.5 20c2 0 3-1 3.5-2.5L12 11"/>
+          <path d="M12 9c1.5-1 3-1.4 4.5-1 2.5.5 3.5 4 3.5 7.5 0 3-1.5 4.5-3.5 4.5-2 0-3-1-3.5-2.5L12 11"/>
+        </svg>
+        <div><div class="brand-name">PulmoScan</div><div class="brand-sub">Patient and doctor portal</div></div>
+      </a>
+      <div class="portal-actions">
+        <button class="btn" id="logoutBtn" type="button" hidden>Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="notice">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 1 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    <p><strong>Educational prototype, not a diagnostic tool.</strong> AI and doctor-review features here do not replace clinical care.</p>
+  </div>
+
+  <main class="portal-main auth-layout">
+    <section class="auth-intro" id="authIntro" aria-labelledby="authIntroTitle">
+      <p class="auth-eyebrow">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8"/><path d="M12 9c-1.5-1-3-1.4-4.5-1C5 8.5 4 12 4 15.5 4 18.5 5.5 20 7.5 20c2 0 3-1 3.5-2.5L12 11"/><path d="M12 9c1.5-1 3-1.4 4.5-1 2.5.5 3.5 4 3.5 7.5 0 3-1.5 4.5-3.5 4.5-2 0-3-1-3.5-2.5L12 11"/></svg>
+        RESPIRATORY IMAGE REVIEW
+      </p>
+      <h1 id="authIntroTitle">Your X-ray results,<br><span>all in one place.</span></h1>
+      <p class="auth-intro-copy">Sign in to continue to the existing analysis workspace, follow your saved reports, and request a doctor review when you choose.</p>
+
+      <div class="auth-benefits" aria-label="Portal features">
+        <div class="auth-benefit">
+          <span class="auth-benefit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8M8 10h6"/></svg>
+          </span>
+          <span><strong>Your saved reports</strong><small>Find previous analyses and review updates.</small></span>
+        </div>
+        <div class="auth-benefit">
+          <span class="auth-benefit-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <span><strong>Optional doctor review</strong><small>Request a clinician's review of an AI result.</small></span>
+        </div>
+      </div>
+
+      <div class="auth-preview" aria-hidden="true">
+        <div class="auth-preview-art">
+          <svg viewBox="0 0 180 170">
+            <path d="M89 25v47m0-23c-15-13-34-12-43 2-8 13-9 37-3 53 5 13 19 18 29 10 10-7 14-21 17-39m0-26c15-13 34-12 43 2 8 13 9 37 3 53-5 13-19 18-29 10-10-7-14-21-17-39"/>
+            <path d="M67 42c-4 10-7 20-8 30m54-30c4 10 7 20 8 30M72 107l13-14m23 14L95 93"/>
+            <path d="M89 25v-9"/>
+          </svg>
+          <span class="auth-preview-label">ANALYSIS WORKSPACE</span>
+        </div>
+        <div class="auth-preview-caption">
+          <span class="auth-preview-dot"></span>
+          <span><strong>One familiar workflow</strong><small>Image quality · AI result · Grad-CAM</small></span>
+          <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+      <p class="auth-prototype-note">Educational prototype · Not for diagnosis or emergency care</p>
+    </section>
+
+    <section class="panel portal-auth" id="authPanel">
+      <div class="auth-card-heading">
+        <p class="auth-card-kicker">ACCOUNT ACCESS</p>
+        <p class="auth-card-caption">Sign in or create an account to continue.</p>
+      </div>
+      <div class="portal-tabs" role="tablist" aria-label="Account options">
+        <button type="button" aria-pressed="true" class="btn portal-tab active" data-panel="loginPanel">Sign in</button>
+        <button type="button" aria-label="Patient registration" aria-pressed="false" class="btn portal-tab" data-panel="patientRegisterPanel"><span class="auth-tab-full">Patient registration</span><span class="auth-tab-compact" aria-hidden="true">Patient</span></button>
+        <button type="button" aria-label="Doctor registration" aria-pressed="false" class="btn portal-tab" data-panel="doctorRegisterPanel"><span class="auth-tab-full">Doctor registration</span><span class="auth-tab-compact" aria-hidden="true">Doctor</span></button>
+      </div>
+      <div class="portal-message" id="authMessage" role="status" aria-live="polite"></div>
+      <form class="portal-form" id="loginPanel">
+        <div class="portal-form-heading"><h2>Welcome back</h2><p>Enter your account details to continue.</p></div>
+        <div class="field"><label for="loginRole">I am signing in as</label><select id="loginRole" required><option value="PATIENT">Patient</option><option value="DOCTOR">Doctor</option></select></div>
+        <div class="field"><label for="loginEmail">Email address</label><input id="loginEmail" type="email" autocomplete="username" placeholder="you@example.com" required maxlength="254"></div>
+        <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters" required minlength="6" maxlength="256"></div>
+        <button class="btn btn-primary auth-submit" type="submit">Continue <span aria-hidden="true">→</span></button>
+        <p class="auth-form-note">Your patient analysis stays in the main PulmoScan workspace.</p>
+      </form>
+      <form class="portal-form" id="patientRegisterPanel" hidden>
+        <div class="portal-form-heading"><h2>Create your account</h2><p>Set up a patient account to save and revisit your reports.</p></div>
+        <div class="field"><label for="patientFullName">Full name</label><input id="patientFullName" autocomplete="name" placeholder="Your full name" required minlength="2" maxlength="120"></div>
+        <div class="field"><label for="patientEmail">Email address</label><input id="patientEmail" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="254"></div>
+        <div class="field"><label for="patientPassword">Password</label><input id="patientPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" required minlength="6" maxlength="256"></div>
+        <button class="btn btn-primary auth-submit" type="submit">Create patient account <span aria-hidden="true">→</span></button>
+      </form>
+      <form class="portal-form" id="doctorRegisterPanel" hidden>
+        <div class="portal-form-heading"><h2>Doctor access</h2><p>Registration requires a code from the server administrator.</p></div>
+        <div class="field"><label for="doctorFullName">Full name</label><input id="doctorFullName" autocomplete="name" placeholder="Your full name" required minlength="2" maxlength="120"></div>
+        <div class="field"><label for="doctorEmail">Email address</label><input id="doctorEmail" type="email" autocomplete="email" placeholder="you@example.com" required maxlength="254"></div>
+        <div class="field"><label for="doctorPassword">Password</label><input id="doctorPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters" required minlength="6" maxlength="256"></div>
+        <div class="field"><label for="doctorCode">4-digit verification code</label><input id="doctorCode" type="password" inputmode="numeric" pattern="[0-9]{4}" placeholder="••••" required minlength="4" maxlength="4" autocomplete="off"></div>
+        <button class="btn btn-primary auth-submit" type="submit">Register as doctor <span aria-hidden="true">→</span></button>
+      </form>
+    </section>
+
+    <section class="portal-dashboard" id="doctorDashboard" hidden>
+      <div class="portal-heading"><div><p class="eyebrow">Doctor dashboard</p><h1>Review queue</h1><p class="muted">Only requests assigned to you or not yet claimed are shown.</p></div><button class="btn" id="refreshDoctorQueue" type="button">Refresh queue</button></div>
+      <section class="panel">
+        <div class="portal-message" id="doctorMessage" role="status" aria-live="polite"></div>
+        <div id="doctorQueue" class="portal-list"></div>
+      </section>
+      <section class="panel" id="doctorReviewDetail" hidden></section>
+    </section>
+  </main>
+  <footer class="footer">PulmoScan · AI predictions and visual explanations are educational decision support, not a diagnosis.</footer>
+  <script src="auth.js?v=3"></script>
+</body>
+</html>

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
@@ -28,6 +28,11 @@
       <div class="status" id="status" data-state="checking" role="status" aria-live="polite">
         <span class="status-dot"></span>
         <span id="statusText">Connecting to model…</span>
+      </div>
+      <a class="btn account-link" id="accountLink" href="auth.html">Sign in / register</a>
+      <div class="account-session" id="accountSession" hidden>
+        <span id="accountName"></span>
+        <button class="btn" type="button" id="signOutBtn">Sign out</button>
       </div>
     </div>
   </header>
@@ -50,21 +55,26 @@
         <!-- Step 1 -->
         <fieldset class="step-block">
           <legend><span class="step-num">1</span>Patient details</legend>
-          <div class="fields">
+          <div class="fields patient-fields">
             <div class="field">
               <label for="patientName">Full name</label>
-              <input type="text" id="patientName" name="name" maxlength="60" autocomplete="off" placeholder="e.g. Asha Kumar" required>
-              <p class="field-error" id="nameError" hidden>Enter a name (2 to 60 characters).</p>
+              <input type="text" id="patientName" name="name" maxlength="120" autocomplete="off" placeholder="e.g. Asha Kumar" required>
+              <p class="field-error" id="nameError" hidden>Enter a name (2 to 120 characters).</p>
             </div>
             <div class="field field-age">
               <label for="patientAge">Age (years)</label>
               <input type="number" id="patientAge" name="age" min="0" max="120" step="1" inputmode="numeric" placeholder="e.g. 34" required>
               <p class="field-error" id="ageError" hidden>Enter an age from 0 to 120.</p>
             </div>
+            <div class="field">
+              <label for="patientId">Patient ID</label>
+              <input type="text" id="patientId" name="patient_id" maxlength="64" pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" autocomplete="off" placeholder="e.g. P-1042" required>
+              <p class="field-error" id="patientIdError" hidden>Use 1–64 letters, numbers, dots, underscores or hyphens.</p>
+            </div>
           </div>
           <p class="privacy-note">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-            Name and age stay in this browser tab for the report. Only the image is sent to the model.
+            When signed in, your name and Patient ID are filled from your account. Analyze here, then request a doctor review from the report if you choose.
           </p>
         </fieldset>
 
@@ -91,6 +101,8 @@
             <input type="file" id="fileInput" accept="image/png,image/jpeg" hidden>
           </div>
           <p class="field-error" id="imageError" hidden>Add a chest X-ray image.</p>
+
+          <div class="quality-result" id="qualityResult" role="status" aria-live="polite" hidden></div>
 
           <div class="samples" id="samples" hidden>
             <span class="samples-label">No X-ray at hand? Use a held-out test image:</span>
@@ -129,6 +141,41 @@
         <p class="muted">Accuracy is measured on held-out test images from the same datasets. On X-rays from other hospitals it was 13–22 points lower in testing.</p>
       </aside>
     </div>
+
+    <section class="panel patient-reports-panel" id="patientReportsPanel" hidden aria-labelledby="patientReportsTitle">
+      <div class="panel-head">
+        <h2 id="patientReportsTitle">My X-ray reports and doctor recommendations</h2>
+        <button type="button" class="btn" id="refreshPatientReports">Refresh reports</button>
+      </div>
+      <p class="history-message" id="patientReportsMessage" role="status" aria-live="polite"></p>
+      <div class="patient-reports-list" id="patientReportsList"></div>
+    </section>
+
+    <section class="panel history-panel" aria-labelledby="historyTitle">
+      <div class="panel-head"><h2 id="historyTitle">Patient history</h2></div>
+      <p class="muted history-intro">Look up records by Patient ID, then choose two records from that patient's history to compare. Images and confidence are decision-support information, not medical conclusions.</p>
+      <form class="history-search" id="historyForm">
+        <div class="field">
+          <label for="historyPatientId">Patient ID</label>
+          <input type="text" id="historyPatientId" maxlength="64" autocomplete="off" placeholder="Enter the same Patient ID used for uploads" required>
+        </div>
+        <button type="submit" class="btn">View history</button>
+      </form>
+      <p class="history-message" id="historyMessage" role="status" aria-live="polite"></p>
+      <div class="history-records" id="historyRecords"></div>
+      <div class="history-compare-controls" id="historyCompareControls" hidden>
+        <div class="field">
+          <label for="compareRecordA">First record</label>
+          <select id="compareRecordA"></select>
+        </div>
+        <div class="field">
+          <label for="compareRecordB">Second record</label>
+          <select id="compareRecordB"></select>
+        </div>
+        <button type="button" class="btn btn-primary" id="compareHistoryBtn">Compare selected records</button>
+      </div>
+      <div class="history-comparison" id="historyComparison" hidden></div>
+    </section>
   </main>
 
   <div class="busy-overlay" id="busyOverlay" hidden>
@@ -143,7 +190,7 @@
     Baseline CNN vs ResNet50 transfer learning · Grad-CAM · patient-level 80/10/10 split
   </footer>
 
-  <script src="common.js?v=7"></script>
-  <script src="home.js?v=7"></script>
+  <script src="common.js?v=11"></script>
+  <script src="home.js?v=12"></script>
 </body>
 </html>

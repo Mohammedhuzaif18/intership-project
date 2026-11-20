@@ -2,7 +2,7 @@
 
 > **Educational prototype, not a diagnostic tool.** Not an FDA/CE certified medical device. Never use it for clinical decisions.
 
-An end-to-end pipeline that classifies chest X-rays as **Normal** or **Pneumonia** (Review-I) and then as **Normal, Pneumonia / Non-COVID infection, COVID-19 or Tuberculosis** (Review-II). It explains each prediction with **Grad-CAM**, serves the model through a **FastAPI** backend and a web frontend, and measures how well the models transfer to an unseen dataset. The project is split into Review-I (data, baseline CNN, ResNet50 transfer learning, evaluation) and Review-II (Grad-CAM, app, multi-class extension). Progress is tracked step by step in [PROGRESS.md](PROGRESS.md); the Review write-ups are [REVIEW1_SUMMARY.md](REVIEW1_SUMMARY.md) and [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
+An end-to-end pipeline that classifies chest X-rays as **Normal** or **Pneumonia** (Review-I) and then as **Normal, Pneumonia / Non-COVID infection, COVID-19 or Tuberculosis** (Review-II). It explains each prediction with **Grad-CAM**, serves the model through a **FastAPI** backend and a web frontend, and measures how well the models transfer to an unseen dataset. The app also includes technical image-quality screening, persistent patient-wise X-ray history with visual comparisons, and an optional patient/doctor review workflow. The project is split into Review-I (data, baseline CNN, ResNet50 transfer learning, evaluation) and Review-II (Grad-CAM, app, multi-class extension). Progress is tracked step by step in [PROGRESS.md](PROGRESS.md); the Review write-ups are [REVIEW1_SUMMARY.md](REVIEW1_SUMMARY.md) and [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
 
 ## Results (held-out test set only)
 
@@ -20,7 +20,7 @@ ResNet50 accuracy by subtype: bacterial pneumonia 98.2% (276 images), viral 94.6
 ### Review-II Phase 2: Grad-CAM and the app
 
 - **Grad-CAM** on ResNet50 `conv5_block3_out` (found programmatically) for 10 test images, 4 of them wrong: `results/gradcam/`. Correct viral cases light up both lung fields. Several pneumonia calls, including both false alarms, lean on image borders, chest wall and burned-in text, which is consistent with the image-size bias.
-- **App**: FastAPI `/health`, `/predict`, `/samples` and a responsive web UI with probability bars, an aligned heatmap overlay with four views, and a disclaimer. Screenshots are in `results/app/`.
+- **App**: FastAPI `/health`, `/quality`, `/predict`, `/samples` and patient history / comparison endpoints. The responsive UI includes probability bars, Grad-CAM views, patient history, technical image checks, and a disclaimer. Screenshots are in `results/app/`.
 - **Integration test passes**: through the API, real test X-rays get the same class and probabilities as the offline test evaluation. Details: [REVIEW2_SUMMARY.md](REVIEW2_SUMMARY.md).
 
 ### Review-II Phase 3: Multi-class extension (Kermany + COVID-QU-Ex + TB database, test n = 793)
@@ -54,6 +54,8 @@ Both models keep about 90% pneumonia recall on the new source, but their specifi
 | 5 | Grad-CAM | Done | `src/gradcam.py`, `results/gradcam/`, `results/multiclass/gradcam/` |
 | 6 | FastAPI backend + web frontend (class, confidence, Grad-CAM) | Done | `backend/`, `frontend/`, `tests/test_integration.py` (passes) |
 | 7 | Multi-class (Normal, Pneumonia/Non-COVID, COVID-19, TB) + cross-dataset test | Done (TB included) | `results/multiclass/`, `results/cross_dataset/` |
+| 8 | Technical image quality screening + persistent patient history and visual comparisons | Done | `backend/image_quality.py`, `backend/patient_history.py`, `frontend/`, `tests/test_integration.py` |
+| 9 | Optional patient/doctor authentication, review requests, doctor decisions, and separate AI/doctor reports | Done | `backend/auth.py`, `backend/review_store.py`, `backend/main.py`, `frontend/auth.html`, `frontend/auth.js` |
 
 
 ## Datasets
@@ -106,8 +108,8 @@ intership/
 │   ├── evaluate.py          # metrics and figures
 │   ├── gradcam.py           # Grad-CAM + 10-image report
 │   └── cross_dataset.py     # Phase 3 cross-source generalization test
-├── backend/main.py          # FastAPI app
-├── frontend/                # index.html, style.css, app.js
+├── backend/                 # FastAPI app, image quality checks, patient history storage
+├── frontend/                # index.html, results.html, shared/home/results scripts, style.css
 ├── tests/test_integration.py
 ├── notebooks/               # Colab notebook + generator
 ├── splits/                  # file lists: binary/, multiclass/ ({train,val,test,removed}.csv), cross_dataset/
@@ -141,6 +143,49 @@ python -m venv --system-site-packages .venv
 # 6. Integration test (starts its own server on a free port)
 .venv/Scripts/python tests/test_integration.py
 ```
+
+### Image quality and patient history
+
+The upload page first calls `POST /quality`; `/predict` repeats the quality checks before running the existing chest-image gate, ResNet50 prediction, and Grad-CAM path. Any detected quality issue—including blur, very dark/bright exposure, low resolution, or unusual framing—stops prediction and shows upload suggestions. Defaults are configurable with `XRAY_QUALITY_MIN_RESOLUTION` (128 px), `XRAY_QUALITY_MIN_SHARPNESS` (Laplacian variance 5), `XRAY_QUALITY_MIN_BRIGHTNESS` (20), `XRAY_QUALITY_MAX_BRIGHTNESS` (235), `XRAY_QUALITY_MIN_ASPECT_RATIO` (0.5), and `XRAY_QUALITY_MAX_ASPECT_RATIO` (2.0). These are technical checks only; passing does not establish medical reliability or diagnostic accuracy. The uploaded original is stored unchanged; quality checks do not replace or alter model preprocessing.
+
+The UI asks for a Patient ID and sends it with the image to `POST /predict`. Existing API clients may omit it to use the original prediction-only workflow. With an ID, predictions and original / Grad-CAM / heatmap files are stored in SQLite at `data/patient_history/history.sqlite3` and under `data/patient_history/records/` (both within the git-ignored `data/` directory). Set `PATIENT_HISTORY_DIR` to move this local store. Patient IDs are limited to letters, numbers, dots, underscores and hyphens. Re-uploading the same image for a patient is allowed and creates a separate timestamped history record.
+
+`GET /patients/{patient_id}/history` returns that patient's records in upload order. `GET /patients/{patient_id}/compare?record_a_id=…&record_b_id=…` only resolves records under the requested patient ID and returns an OpenCV feature-aligned difference map where registration succeeds. A report automatically compares a new record with the most recent prior record; the history page also supports selecting any two records. The plain-language summary explicitly compares model-predicted categories: a shift from a disease category to Normal is labeled a **possible improvement signal**, the reverse is a **possible new or worsening signal**, and same-category or disease-to-disease changes are explained without assigning a direction. It also notes that confidence is not disease severity. These are model-output interpretations, not confirmed clinical outcomes; a clinician must assess the patient.
+
+### Optional patient accounts and doctor review
+
+The sign-in and registration screen is a responsive, clinic-inspired portal with clear patient/doctor account options; it continues to send patients into the existing analysis workspace.
+
+Open `http://127.0.0.1:8000/auth.html` to sign in or register. After patient sign-in, the app opens the existing main analysis interface at `/index.html`—the same image-quality checks, prediction, Grad-CAM report and patient-history experience. The account's name and Patient ID are populated in that interface. A signed-in patient also sees their saved X-ray reports on this main page, including each AI prediction and review status. The list refreshes automatically, so a patient who signs in after a doctor has submitted a recommendation sees the doctor's decision, observations, comments, name, review date and protected X-ray/Grad-CAM images. The report offers an optional doctor-review request; the AI-only result is available immediately and remains unchanged by a later doctor decision. Doctor sign-in opens the review queue. Patient and doctor passwords must be at least 6 characters; because six-character passwords are weaker, users should choose longer, unique passwords. Passwords are hashed with Argon2id. Doctors register with a four-digit `DOCTOR_REGISTRATION_CODE` supplied by the server operator; it should be chosen privately and is not a substitute for real-world credential verification. Signed HS256 JWTs expire after `AUTH_TOKEN_LIFETIME_SECONDS` (default 3600 seconds). For deployment, configure a persistent secret of at least 32 characters using `AUTH_JWT_SECRET` and protect it as a credential. If omitted, the app creates a local key in the configured data directory; tokens signed with that key remain valid across server restarts but are not portable across instances.
+
+The authentication workflow uses the same SQLite database under `PATIENT_HISTORY_DIR`. Its account/review tables store users, patient and verified-doctor profiles, AI prediction metadata, review requests, and separate doctor decisions. An AI prediction is never overwritten by a doctor's approval or rejection. Patients can only access their own predictions/history; doctors only see unclaimed requests or requests assigned to them, and must claim a request before reading its protected images or submitting a review. Review status and completed doctor findings are shown on the existing analysis report. Access is appropriate for local educational testing only: it is not a production health-record system and has no clinical-grade identity verification, encryption-at-rest, audit/compliance controls, or notification delivery service.
+
+Authentication and review API:
+
+| Method | Endpoint | Access |
+|---|---|---|
+| `POST` | `/auth/patient/register` | Public patient registration |
+| `POST` | `/auth/doctor/register` | Public, requires `DOCTOR_REGISTRATION_CODE` |
+| `POST` | `/auth/login` | Public login; optional `role` check |
+| `GET` | `/auth/me` | Any authenticated account |
+| `POST` | `/auth/patient/predict` | Patient; runs existing quality + prediction + Grad-CAM flow |
+| `GET` | `/auth/patient/predictions` | Patient's own AI reports and review status |
+| `GET` | `/auth/patient/predictions/{prediction_id}/report` | Patient's own AI-only or completed doctor-reviewed report |
+| `POST` | `/auth/patient/predictions/{prediction_id}/review-request` | Patient; opens one review request for their prediction |
+| `GET` | `/auth/patient/predictions/{prediction_id}/images/{kind}` | Owning patient |
+| `GET` | `/auth/doctor/reviews` | Doctor; available queue |
+| `POST` | `/auth/doctor/reviews/{request_id}/claim` | Doctor; claims a request |
+| `POST` | `/auth/doctor/reviews/{request_id}/submit` | Assigned doctor; records APPROVE/REJECT and observations |
+| `GET` | `/auth/doctor/reviews/{request_id}/images/{kind}` | Doctor assigned to the request |
+
+`kind` is `original`, `gradcam`, or `heatmap`. Doctor registration is intentionally code-gated. In PowerShell, choose a private four-digit code before starting the server and enter the same code in the portal's doctor-registration form:
+
+```powershell
+$env:DOCTOR_REGISTRATION_CODE = Read-Host "Choose a private 4-digit doctor code"
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+The code is available only to that server process; set it again whenever you restart the server. Do not commit the code or share it with patients. A four-digit code is suitable only for this local educational prototype; for production, use a real doctor verification and approval process rather than a shared registration code.
 
 Phase 3 (Kaggle credentials only via the `KAGGLE_USERNAME` / `KAGGLE_KEY` environment variables, or pass folders you downloaded yourself):
 

@@ -35,3 +35,23 @@
 - [x] 17. Cross-dataset (Normal vs Pneumonia, ResNet50): Kermany-trained 95.7% -> 73.9% on unseen COVID-QU-Ex (drop 21.8 pts); COVID-QU-Ex-trained 87.5% -> 74.3% on Kermany (drop 13.2 pts); specificity collapses on the unseen population. `results/cross_dataset/`.
 - [x] 18. 4-class ResNet50 + class_names.json installed in `models/`; backend/frontend pick up the 4 classes; integration test re-run and passing; UI checked in the browser.
 - [x] 19. REVIEW2_SUMMARY.md and final README written; committed and tagged `review-2`.
+
+## Extension · Patient history and image quality
+
+- [x] 20. Configurable OpenCV technical image-quality screening integrated before prediction; failed uploads receive actionable warnings without altering the original or model preprocessing.
+- [x] 21. Persistent SQLite patient history with saved originals, probabilities and Grad-CAM artifacts; patient-scoped chronological history and OpenCV aligned visual comparisons integrated into the existing API and frontend.
+- [x] 22. Integration tests cover existing prediction parity and Grad-CAM outputs, image-quality rejection, first and repeated patient uploads, history, selected comparisons, cross-patient rejection, duplicate uploads, and persistence after server restart; README updated.
+- [x] 23. Tightened the upload quality gate so every detected issue, including unusual framing, blocks inference at preflight; regression tests verify rejected uploads create no patient record.
+- [x] 24. Added a plain-language model-category comparison: shifts from disease to Normal are labeled possible improvement signals, shifts from Normal to disease are possible new/worsening signals, and other cases are described without implying a clinical outcome.
+- [x] 25. Removed same-image upload rejection so repeat uploads create separate history entries; existing SQLite history is migrated without losing records or blocking duplicates.
+
+## Extension · Optional patient accounts and doctor review
+
+- [x] 26. Argon2id password hashing, signed expiring JWTs, patient/verified-doctor roles, and SQLite account/review persistence added to the existing backend.
+- [x] 27. Integrated patient reports and review requests, doctor queue/claim/review, protected image access, and separate AI-only / doctor-reviewed reports into the existing frontend and API.
+- [x] 28. End-to-end tests cover authentication, permissions, both review decisions, account isolation, and persistence; README documents run/configuration/API details. Python and JavaScript syntax checks plus the full integration suite pass, including the existing ResNet50/Grad-CAM parity checks.
+- [x] 29. Lowered the registration and login password minimum to 6 characters, updated portal validation and documentation, and added integration coverage for successful 6-character login and rejection of shorter passwords.
+- [x] 30. Removed the separate patient-analysis dashboard and AI-demo links from login; patient sign-in now redirects into the existing analysis/history UI with the account identity prefilled. The existing report now lets patients request a doctor review and follow its status without replacing the original AI report.
+- [x] 31. Changed doctor registration verification to an exact four-digit numeric code; documented the policy and verified valid-code signup plus invalid-code rejection.
+- [x] 32. Added the patient's saved AI reports and completed doctor recommendations to the existing main app after sign-in, with automatic status refresh, reviewer/date/observations/comments and protected X-ray/Grad-CAM images; integration tests confirm completed recommendations remain visible from the patient's report list.
+- [x] 33. Redesigned the sign-in and registration page as a responsive clinic-inspired portal while preserving authentication panels, role selection, account flows, and doctor dashboard behavior; verified mobile layout, auth panel switching, syntax, and the full integration suite.
